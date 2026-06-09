@@ -15,6 +15,19 @@ class OnboardingView extends StatefulWidget {
 class _OnboardingViewState extends State<OnboardingView> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  double _scrollOffset = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController.addListener(() {
+      if (mounted && _pageController.hasClients) {
+        setState(() {
+          _scrollOffset = _pageController.page ?? 0.0;
+        });
+      }
+    });
+  }
 
   final List<Map<String, dynamic>> _onboardingData = [
     {
@@ -108,14 +121,22 @@ class _OnboardingViewState extends State<OnboardingView> {
           SizedBox(
             height: illustrationHeight,
             width: size.width,
-            child: PageView.builder(
-              controller: _pageController,
+            child: Stack(
               clipBehavior: Clip.none,
-              onPageChanged: (page) => setState(() => _currentPage = page),
-              itemCount: _onboardingData.length,
-              itemBuilder: (context, index) {
-                return _buildSlide(size, illustrationHeight, index);
-              },
+              children: [
+                // Animated background blue shape
+                _buildAnimatedBlueShape(size),
+
+                PageView.builder(
+                  controller: _pageController,
+                  clipBehavior: Clip.none,
+                  onPageChanged: (page) => setState(() => _currentPage = page),
+                  itemCount: _onboardingData.length,
+                  itemBuilder: (context, index) {
+                    return _buildSlide(size, illustrationHeight, index);
+                  },
+                ),
+              ],
             ),
           ),
 
@@ -126,49 +147,90 @@ class _OnboardingViewState extends State<OnboardingView> {
     );
   }
 
+  // Animated blue shape builder for smooth background morphing
+  Widget _buildAnimatedBlueShape(Size size) {
+    const fw = 390.0;
+    const fh = 844.0;
+    final sw = size.width / fw;
+    final sh = size.height / fh;
+
+    // Slide 0 Shape Properties (rotated top-left)
+    final w0 = 200.0 * sw;
+    final h0 = 472.39 * sh;
+    final top0 = 8.72 * sh;
+    final left0 = -70.0 * sw;
+    final rotate0 = -44.6;
+    final radius0 = 100.0 * sw;
+
+    // Slide 1 Shape Properties (vertical bottom-center)
+    final w1 = 200.0 * sw;
+    final h1 = 472.39 * sh;
+    final top1 = 363.0 * sh; // (438.0 - 75.0) * sh
+    final left1 = 95.0 * sw;
+    final rotate1 = -180.0;
+    final radius1 = 100.0 * sw;
+
+    // Slide 2 Shape Properties (rotated top-right)
+    final w2 = 200.0 * sw;
+    final h2 = 472.39 * sh;
+    final top2 = 8.72 * sh; // (83.72 - 75.0) * sh
+    final left2 = 260.0 * sw;
+    final rotate2 = -315.4;
+    final radius2 = 100.0 * sw;
+
+    double w, h, top, left, rotate, radius;
+
+    if (_scrollOffset <= 1.0) {
+      final t = _scrollOffset;
+      w = w0 + (w1 - w0) * t;
+      h = h0 + (h1 - h0) * t;
+      top = top0 + (top1 - top0) * t;
+      left = left0 + (left1 - left0) * t;
+      rotate = rotate0 + (rotate1 - rotate0) * t;
+      radius = radius0 + (radius1 - radius0) * t;
+    } else {
+      final t = _scrollOffset - 1.0;
+      w = w1 + (w2 - w1) * t;
+      h = h1 + (h2 - h1) * t;
+      top = top1 + (top2 - top1) * t;
+      left = left1 + (left2 - left1) * t;
+      rotate = rotate1 + (rotate2 - rotate1) * t;
+      radius = radius1 + (radius2 - radius1) * t;
+    }
+
+    return Positioned(
+      top: top,
+      left: left,
+      child: Transform.rotate(
+        angle: rotate * math.pi / 180,
+        alignment: Alignment.center,
+        child: Container(
+          width: w,
+          height: h,
+          decoration: BoxDecoration(
+            color: const Color(0xFF002C8B),
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(radius),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Builds one illustration slide using exact Figma pixel measurements
   /// scaled via MediaQuery.
   Widget _buildSlide(Size size, double containerHeight, int index) {
     final data = _onboardingData[index];
-    final bgType = (data['bgType'] as String?) ?? 'rectangle';
     final imagePath =
         (data['image'] as String?) ?? 'lib/assets/images/Play.png';
 
-    // ── Figma base frame (390 × 844 px) ──────────────────────────────────────
     const fw = 390.0; // Figma frame width
     const fh = 844.0; // Figma frame height
 
-    // Scale factors: maps Figma px → device px
     final sw = size.width / fw;
     final sh = size.height / fh;
 
-    // ── Blue shape ───────────────────────────────────────────────────────────────
-    //  Shape: rounded-bottom rectangle, 45° rotated
-    //  Dimensions (user-confirmed): w=300.47, h=200.39  color=#002C8B
-    //
-    //  GOAL: near tip at top-left corner, far tip ends at CENTER of illustration.
-    //
-    //  Maths (all in Figma px on 390×844 frame):
-    //    diagonal = sqrt(300.47² + 200.39²) ≈ 361 px
-    //    half-diag along 45° ≈ 361/sqrt(2) ≈ 127.3 px
-    //    illustration center = (195, illustrationH/2) ≈ (195, 240) px
-    //    shape center = center − (127.3, 127.3) = (67.7, 112.7)
-    //    Positioned left  = cx − shapeW/2 = 67.7 − 150.2 = −82.5 px
-    //    Positioned top   = cy − shapeH/2 = 112.7 − 100.2 =  12.5 px
-    //  Result: near tip ≈ (−60, −15) → top-left area (slightly off-screen)
-    //          far  tip ≈ (195, 240) → center of illustration  ✓
-    final shapeW = 700.47 * sw;
-    final shapeH = 240.39 * sh;
-    final shapeTopInSlide = 00.0 * sh; //  12.5 px in Figma frame
-    final shapeLeft = -400.0 * sw; // -82.5 px in Figma frame
-    final shapeRadius = 100.0 * sw;
-    // bottom-left & bottom-right = 100 px
-
-    // ── Image (Figma exact values) ─────────────────────────────────────────────
-    //  width  652.35 px  →  size.width  * (652.35/390)
-    //  height 381    px  →  size.height * (381/844)
-    //  top   175     px  →  relative to illustration = 175−75 = 100 px
-    //  left -173     px  →  size.width  * (-173/390)
     final imgW = 400.0 * sw;
     final imgTopInSlide = 60.0 * sh;
     final imgLeft = 1.0 * sw;
@@ -180,10 +242,7 @@ class _OnboardingViewState extends State<OnboardingView> {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            // 1. White base
-            Container(color: Colors.white),
-
-            // 2. Text Content (Title & Description) at the top
+            // Text Content (Title & Description) at the top
             Positioned(
               top: (130.0 - 75.0) * sh, // Figma top 130px (minus top bar 75px)
               left: size.width * 0.07,
@@ -214,28 +273,7 @@ class _OnboardingViewState extends State<OnboardingView> {
               ),
             ),
 
-            // 3. Blue shape (width 234.47, height 472.39, top 438, left 79, radius 100, rotation 180)
-            Positioned(
-              top: (438.0 - 75.0) * sh, // Figma top 438px (minus top bar 75px)
-              left: 95.0 * sw,
-              child: Transform.rotate(
-                angle: 180 * math.pi / 180, // 180 degrees
-                alignment: Alignment.center,
-                child: Container(
-                  width: 200.0 * sw,
-                  height: 472.39 * sh,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF002C8B),
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(100.0 * sw),
-                      bottomRight: Radius.circular(100.0 * sw),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            // 4. Image (Win.png) placed on top of the blue shape
+            // Image (Win.png) placed on top of the blue shape
             Positioned(
               top: (340.0 - 75.0) * sh, // Center it vertically around y=300px
               left: (390.0 - 320.0) / 2 * sw,
@@ -257,32 +295,7 @@ class _OnboardingViewState extends State<OnboardingView> {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            // 1. White base
-            Container(color: Colors.white),
-
-            // 2. Blue shape (width 234.47, height 472.39, top 83.72, left 109.39, radius 100, rotation 44.6)
-            Positioned(
-              top:
-                  (83.72 - 75.0) * sh, // Figma top 83.72px (minus top bar 75px)
-              left: 250.0 * sw,
-              child: Transform.rotate(
-                angle: 44.6 * math.pi / 180, // 44.6 degrees
-                alignment: Alignment.center,
-                child: Container(
-                  width: 220.0 * sw,
-                  height: 442.0 * sh,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF002C8B),
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(100.0 * sw),
-                      bottomRight: Radius.circular(100.0 * sw),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            // 3. Image (Secure.png) placed on top of the blue shape
+            // Image (Secure.png) placed on top of the blue shape
             Positioned(
               top: (200.0 - 75.0) * sh, // Center it vertically
               left: (390.0 - 320.0) / 2 * sw,
@@ -297,79 +310,18 @@ class _OnboardingViewState extends State<OnboardingView> {
       );
     }
 
-    if (bgType == 'rectangle') {
-      return ClipRect(
-        child: SizedBox(
-          width: size.width,
-          height: containerHeight,
-          child: Stack(
-            children: [
-              // 1. White base
-              Container(color: Colors.white),
-
-              // 2. Rotated dark-navy rectangle (Figma shape)
-              Positioned(
-                top: shapeTopInSlide,
-                left: shapeLeft,
-                child: Transform.rotate(
-                  angle: 45 * math.pi / 180, // 45° clockwise
-                  alignment: Alignment.center,
-                  child: Container(
-                    width: shapeW,
-                    height: shapeH,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF002C8B),
-                      borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(shapeRadius),
-                        bottomRight: Radius.circular(shapeRadius),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              // 3. Play.png positioned with Figma coordinates
-              Positioned(
-                top: imgTopInSlide,
-                left: imgLeft,
-                child: Image.asset(imagePath, width: imgW, fit: BoxFit.contain),
-              ),
-            ],
+    // Default slide (Index 0): Play.png positioned with Figma coordinates
+    return SizedBox(
+      width: size.width,
+      height: containerHeight,
+      child: Stack(
+        children: [
+          Positioned(
+            top: imgTopInSlide,
+            left: imgLeft,
+            child: Image.asset(imagePath, width: imgW, fit: BoxFit.contain),
           ),
-        ),
-      );
-    }
-
-    // ── Screens 2 & 3: Large dark-navy circle background ─────────────────────
-    return ClipRect(
-      child: SizedBox(
-        width: size.width,
-        height: containerHeight,
-        child: Stack(
-          children: [
-            Container(color: Colors.white),
-            Center(
-              child: Container(
-                width: size.width * 0.78,
-                height: size.width * 0.78,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF002C8B),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-            Center(
-              child: Padding(
-                padding: EdgeInsets.only(top: size.height * 0.01),
-                child: Image.asset(
-                  imagePath,
-                  width: size.width * 0.82,
-                  fit: BoxFit.contain,
-                ),
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
