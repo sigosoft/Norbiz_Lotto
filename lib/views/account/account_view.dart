@@ -18,96 +18,269 @@ class AccountView extends StatelessWidget {
     final accountController = Get.put(AccountController());
     final localizationController = Get.find<LocalizationController>();
 
-    final profileHeader = Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryOrange,
-        borderRadius: BorderRadius.circular(24),
+    // Custom Header Row matching navigation and screenshot styling
+    final customHeaderRow = Container(
+      color: const Color(0xFFEFF3FD),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          GestureDetector(
+            onTap: () {
+              final homeController = Get.find<HomeController>();
+              homeController.changeNavIndex(0); // Goes to home tab
+            },
+            child: Container(
+              height: 38,
+              width: 38,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.chevron_left_rounded,
+                color: Color(0xFF0F172A),
+                size: 24,
+              ),
+            ),
+          ),
+          Text(
+            'account'.tr,
+            style: const TextStyle(
+              color: Color(0xFF0F172A),
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(width: 38), // Spacer of same width to center the title
+        ],
       ),
-      child: Obx(() => Row(
-            children: [
-              Container(
-                height: 56,
-                width: 56,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                child: Text(
-                  authController.userName.value.isNotEmpty ? authController.userName.value[0].toUpperCase() : 'U',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: AppTheme.primaryOrange),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      authController.userName.value,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      authController.userPhone.value,
-                      style: const TextStyle(color: Colors.white70, fontSize: 13),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.edit_outlined, color: Colors.white),
-                onPressed: () => Get.to(() => const AccountInfoView()),
-              ),
-            ],
-          )),
     );
 
+    // Profile Header Banner (Orange Box)
+    final profileHeader = Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      decoration: const BoxDecoration(color: Color(0xFFFE9900)),
+      child: Obx(
+        () => Row(
+          children: [
+            Container(
+              height: 64,
+              width: 64,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFD15B),
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                authController.userName.value.isNotEmpty
+                    ? authController.userName.value[0].toUpperCase()
+                    : 'J',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    authController.userName.value.isNotEmpty
+                        ? authController.userName.value
+                        : 'John Doe',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    authController.userPhone.value.isNotEmpty
+                        ? authController.userPhone.value
+                        : '+1 (555) 012-3456',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            GestureDetector(
+              onTap: () => Get.to(() => const AccountInfoView()),
+              child: const Icon(Icons.edit, color: Colors.white, size: 22),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    // Wallet Card (Total Available Balance with deposit/withdraw capsule buttons)
     final walletCard = Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'wallet_balance'.tr,
-            style: const TextStyle(color: Colors.grey, fontSize: 13),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            spreadRadius: 1,
+            offset: const Offset(0, 4),
           ),
-          const SizedBox(height: 8),
-          Obx(() => Text(
-                '\$${authController.userWalletBalance.value.toStringAsFixed(2)}',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 28, color: AppTheme.primaryDarkBlue),
-              )),
-          const SizedBox(height: 20),
-          Row(
+        ],
+        border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Opacity(
+              opacity: 0.04,
+              child: const Icon(
+                Icons.account_balance_wallet_rounded,
+                color: Color(0xFF002C8B),
+                size: 64,
+              ),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _showDepositDialog(context, accountController),
-                  icon: const Icon(Icons.account_balance_wallet_outlined, size: 18),
-                  label: Text('deposit'.tr, style: const TextStyle(fontSize: 12)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryDarkBlue,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(0, 48),
+              Text(
+                'wallet_balance'.tr,
+                style: const TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Obx(
+                () => Text(
+                  '\$${authController.userWalletBalance.value.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 28,
+                    color: Color(0xFF0F172A),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _showWithdrawDialog(context, accountController),
-                  icon: const Icon(Icons.account_balance_outlined, size: 18),
-                  label: Text('withdraw'.tr, style: const TextStyle(fontSize: 12)),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.primaryOrange,
-                    side: const BorderSide(color: AppTheme.primaryOrange, width: 1.5),
-                    minimumSize: const Size(0, 48),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF002C8B).withOpacity(0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: () =>
+                            _showDepositDialog(context, accountController),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF002C8B),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          minimumSize: const Size(0, 44),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.account_balance_wallet_rounded,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'deposit'.tr,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFE9900).withOpacity(0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: () =>
+                            _showWithdrawDialog(context, accountController),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFE9900),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          minimumSize: const Size(0, 44),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.outbox_rounded,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'withdraw'.tr,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -115,20 +288,218 @@ class AccountView extends StatelessWidget {
       ),
     );
 
-    // Profile shortcuts
+    // Profile Shortcuts (Bet History, Transactions, Bank Accounts)
     final shortcutButtons = Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _buildShortcutItem(Icons.receipt_long_outlined, 'bet_history'.tr, () {
-          homeController.changeNavIndex(2); // Goes to history tab
-        }),
-        _buildShortcutItem(Icons.history_toggle_off, 'transactions'.tr, () {
-          Get.to(() => const TransactionsView());
-        }),
-        _buildShortcutItem(Icons.account_balance_outlined, 'bank_accounts'.tr, () {
-          Get.to(() => const BankAccountsView());
-        }),
+        _buildShortcutItem(
+          const ImageIcon(
+            AssetImage('lib/assets/images/BottomBetHistory.png'),
+            color: Color(0xFFFE9900),
+            size: 20,
+          ),
+          'bet_history'.tr,
+          () => homeController.changeNavIndex(2),
+        ),
+        _buildShortcutItem(
+          const Icon(
+            Icons.published_with_changes_rounded,
+            color: Color(0xFFFE9900),
+            size: 20,
+          ),
+          'transactions'.tr,
+          () => Get.to(() => const TransactionsView()),
+        ),
+        _buildShortcutItem(
+          const Icon(
+            Icons.account_balance_rounded,
+            color: Color(0xFFFE9900),
+            size: 20,
+          ),
+          'bank_accounts'.tr,
+          () => Get.to(() => const BankAccountsView()),
+        ),
       ],
+    );
+
+    // Custom "18+" logo icon widget
+    final custom18Logo = Container(
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: const Color(0xFF64748B), width: 2),
+      ),
+      alignment: Alignment.center,
+      child: const Text(
+        '18+',
+        style: TextStyle(
+          fontSize: 8,
+          fontWeight: FontWeight.w900,
+          color: Color(0xFF64748B),
+        ),
+      ),
+    );
+
+    // Centered Log Out Button
+    final logoutButton = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24.0),
+      child: Center(
+        child: InkWell(
+          onTap: () => _showLogoutBottomSheet(context),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                "lib/assets/images/logout.png",
+                height: 20,
+                width: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'logout'.tr,
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    // Social Media Icons Row
+    final socialMediaRow = Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Facebook
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          width: 36,
+          height: 36,
+          decoration: const BoxDecoration(
+            color: Color(0xFF1877F2),
+            shape: BoxShape.circle,
+          ),
+          alignment: Alignment.center,
+          child: const Icon(Icons.facebook, color: Colors.white, size: 24),
+        ),
+        // Instagram
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          width: 36,
+          height: 36,
+          decoration: const BoxDecoration(
+            gradient: RadialGradient(
+              colors: [Color(0xFFFFDD55), Color(0xFFFF543F), Color(0xFFC837AB)],
+              center: Alignment.bottomLeft,
+              radius: 1.2,
+            ),
+            shape: BoxShape.circle,
+          ),
+          alignment: Alignment.center,
+          child: const Icon(
+            Icons.camera_alt_outlined,
+            color: Colors.white,
+            size: 18,
+          ),
+        ),
+        // LinkedIn
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          width: 36,
+          height: 36,
+          decoration: const BoxDecoration(
+            color: Color(0xFF0077B5),
+            shape: BoxShape.circle,
+          ),
+          alignment: Alignment.center,
+          child: const Text(
+            'in',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+        // Twitter/X
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          width: 36,
+          height: 36,
+          decoration: const BoxDecoration(
+            color: Colors.black,
+            shape: BoxShape.circle,
+          ),
+          alignment: Alignment.center,
+          child: const Text(
+            'X',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+        // YouTube
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          width: 36,
+          height: 36,
+          decoration: const BoxDecoration(
+            color: Color(0xFFFF0000),
+            shape: BoxShape.circle,
+          ),
+          alignment: Alignment.center,
+          child: const Icon(
+            Icons.play_arrow_rounded,
+            color: Colors.white,
+            size: 22,
+          ),
+        ),
+      ],
+    );
+
+    // Version Footer with Update Check
+    final versionFooter = Padding(
+      padding: const EdgeInsets.only(top: 16.0, bottom: 24.0),
+      child: Column(
+        children: [
+          const Text(
+            'v2.8.1',
+            style: TextStyle(
+              color: Color(0xFF94A3B8),
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          GestureDetector(
+            onTap: () {
+              Get.snackbar(
+                'System Update',
+                'You are running the latest version.',
+                backgroundColor: Colors.white.withOpacity(0.9),
+                colorText: const Color(0xFF0D319C),
+              );
+            },
+            child: const Text(
+              'Check for update',
+              style: TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 11,
+                decoration: TextDecoration.underline,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
 
     return Obx(() {
@@ -137,58 +508,116 @@ class AccountView extends StatelessWidget {
       return Directionality(
         textDirection: textDirection,
         child: Scaffold(
-          appBar: AppBar(
-            backgroundColor: Colors.white,
-            elevation: 0.5,
-            title: Text(
-              'account'.tr,
-              style: const TextStyle(color: AppTheme.primaryDarkBlue, fontWeight: FontWeight.bold),
-            ),
-            centerTitle: true,
-          ),
-          backgroundColor: AppTheme.lightGreyBg,
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+          backgroundColor: const Color(0xFFEFF3FD),
+          body: SafeArea(
             child: Column(
               children: [
-                profileHeader,
-                const SizedBox(height: 16),
-                walletCard,
-                const SizedBox(height: 24),
-                shortcutButtons,
-                const SizedBox(height: 24),
-                
-                // Menu List
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildMenuItem(Icons.person_outline, 'account_info'.tr, () => Get.to(() => const AccountInfoView())),
-                      _buildMenuItem(Icons.language_outlined, 'language'.tr, () => _showLanguageSelector(context, localizationController)),
-                      _buildMenuItem(Icons.privacy_tip_outlined, 'privacy_policy'.tr, () => Get.to(() => const PolicyView(policyType: 'privacy'))),
-                      _buildMenuItem(Icons.description_outlined, 'terms_conditions'.tr, () => Get.to(() => const PolicyView(policyType: 'terms'))),
-                      _buildMenuItem(Icons.gavel_outlined, 'anti_fraud'.tr, () => Get.to(() => const PolicyView(policyType: 'fraud'))),
-                      _buildMenuItem(Icons.child_care_outlined, 'under_18'.tr, () => Get.to(() => const PolicyView(policyType: 'age'))),
-                      _buildMenuItem(Icons.headset_mic_outlined, 'help_center'.tr, () => Get.to(() => const HelpCenterView())),
-                      
-                      // Log out
-                      _buildMenuItem(
-                        Icons.logout, 
-                        'logout'.tr, 
-                        () => _showConfirmationDialog('logout'.tr, 'logout_confirm'.tr, () => Get.offAll(() => const SignInView())),
-                        color: Colors.red,
-                      ),
-                      // Delete
-                      _buildMenuItem(
-                        Icons.delete_forever_outlined, 
-                        'delete_account'.tr, 
-                        () => _showConfirmationDialog('delete_account'.tr, 'delete_confirm'.tr, () => Get.offAll(() => const SignInView())),
-                        color: Colors.red,
-                      ),
-                    ],
+                customHeaderRow,
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        profileHeader,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Column(
+                            children: [
+                              const SizedBox(height: 16),
+                              walletCard,
+                              const SizedBox(height: 20),
+                              shortcutButtons,
+                              const SizedBox(height: 24),
+
+                              // Menu items list directly on background
+                              Column(
+                                children: [
+                                  _buildMenuItem(
+                                    leading: const Icon(
+                                      Icons.person_rounded,
+                                      color: Color(0xFF64748B),
+                                      size: 24,
+                                    ),
+                                    title: 'account_info'.tr,
+                                    onTap: () =>
+                                        Get.to(() => const AccountInfoView()),
+                                  ),
+                                  _buildMenuItem(
+                                    leading: const Icon(
+                                      Icons.forum_outlined,
+                                      color: Color(0xFF64748B),
+                                      size: 22,
+                                    ),
+                                    title: 'language'.tr,
+                                    onTap: () => _showLanguageSelector(
+                                      context,
+                                      localizationController,
+                                    ),
+                                  ),
+                                  _buildMenuItem(
+                                    leading: const Icon(
+                                      Icons.verified_user_rounded,
+                                      color: Color(0xFF64748B),
+                                      size: 22,
+                                    ),
+                                    title: 'privacy_policy'.tr,
+                                    onTap: () => Get.to(
+                                      () => const PolicyView(
+                                        policyType: 'privacy',
+                                      ),
+                                    ),
+                                  ),
+                                  _buildMenuItem(
+                                    leading: const Icon(
+                                      Icons.article_rounded,
+                                      color: Color(0xFF64748B),
+                                      size: 22,
+                                    ),
+                                    title: 'terms_conditions'.tr,
+                                    onTap: () => Get.to(
+                                      () =>
+                                          const PolicyView(policyType: 'terms'),
+                                    ),
+                                  ),
+                                  _buildMenuItem(
+                                    leading: const Icon(
+                                      Icons.gpp_maybe_rounded,
+                                      color: Color(0xFF64748B),
+                                      size: 22,
+                                    ),
+                                    title: 'anti_fraud'.tr,
+                                    onTap: () => Get.to(
+                                      () =>
+                                          const PolicyView(policyType: 'fraud'),
+                                    ),
+                                  ),
+                                  _buildMenuItem(
+                                    leading: custom18Logo,
+                                    title: 'under_18'.tr,
+                                    onTap: () => Get.to(
+                                      () => const PolicyView(policyType: 'age'),
+                                    ),
+                                  ),
+                                  _buildMenuItem(
+                                    leading: const Icon(
+                                      Icons.help_outline_rounded,
+                                      color: Color(0xFF64748B),
+                                      size: 22,
+                                    ),
+                                    title: 'help_center'.tr,
+                                    onTap: () =>
+                                        Get.to(() => const HelpCenterView()),
+                                  ),
+                                ],
+                              ),
+
+                              logoutButton,
+                              socialMediaRow,
+                              versionFooter,
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -199,58 +628,120 @@ class AccountView extends StatelessWidget {
     });
   }
 
-  Widget _buildShortcutItem(IconData icon, String label, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 100,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: AppTheme.primaryDarkBlue, size: 24),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppTheme.primaryDarkBlue),
-              textAlign: TextAlign.center,
-            ),
-          ],
+  Widget _buildShortcutItem(
+    Widget iconWidget,
+    String label,
+    VoidCallback onTap,
+  ) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF002C8B),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: iconWidget,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 10.5,
+                  color: Color(0xFF1E293B),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildMenuItem(IconData icon, String title, VoidCallback onTap, {Color? color}) {
-    return ListTile(
-      leading: Icon(icon, color: color ?? AppTheme.primaryDarkBlue),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: color ?? AppTheme.primaryDarkBlue,
-          fontSize: 14,
+  Widget _buildMenuItem({
+    required Widget leading,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
+          child: Row(
+            children: [
+              SizedBox(width: 24, height: 24, child: Center(child: leading)),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF334155),
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: Color(0xFF64748B),
+              ),
+            ],
+          ),
         ),
       ),
-      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
-      onTap: onTap,
     );
   }
 
-  void _showConfirmationDialog(String title, String desc, VoidCallback onConfirm) {
+  void _showConfirmationDialog(
+    String title,
+    String desc,
+    VoidCallback onConfirm,
+  ) {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryDarkBlue)),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryDarkBlue,
+          ),
+        ),
         content: Text(desc),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text('cancel'.tr, style: const TextStyle(color: Colors.grey)),
+            child: Text(
+              'cancel'.tr,
+              style: const TextStyle(color: Colors.grey),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -268,13 +759,146 @@ class AccountView extends StatelessWidget {
     );
   }
 
-  void _showLanguageSelector(BuildContext context, LocalizationController locController) {
+  void _showLogoutBottomSheet(BuildContext context) {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header with Close Button
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                const Text(
+                  'Logout',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap: () => Get.back(),
+                    child: Container(
+                      height: 36,
+                      width: 36,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: const Color(0xFFE2E8F0),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.03),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.close_rounded,
+                        color: Color(0xFF64748B),
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Subtitle
+            const Text(
+              'Are you sure you want to logout?',
+              style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            // Action Buttons Row
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () => Get.back(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFFF7ED),
+                        foregroundColor: const Color(0xFFFE9900),
+                        shape: const StadiumBorder(),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'No',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Get.back();
+                        Get.offAll(() => const SignInView());
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFE9900),
+                        foregroundColor: Colors.white,
+                        shape: const StadiumBorder(),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Logout',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
+
+  void _showLanguageSelector(
+    BuildContext context,
+    LocalizationController locController,
+  ) {
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.all(24),
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -282,12 +906,18 @@ class AccountView extends StatelessWidget {
           children: [
             Text(
               'language'.tr,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTheme.primaryDarkBlue),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: AppTheme.primaryDarkBlue,
+              ),
             ),
             const SizedBox(height: 16),
             ListTile(
               title: const Text('English'),
-              trailing: locController.currentLanguage.value == 'en' ? const Icon(Icons.check, color: AppTheme.primaryOrange) : null,
+              trailing: locController.currentLanguage.value == 'en'
+                  ? const Icon(Icons.check, color: AppTheme.primaryOrange)
+                  : null,
               onTap: () {
                 locController.changeLanguage('en');
                 Get.back();
@@ -295,7 +925,9 @@ class AccountView extends StatelessWidget {
             ),
             ListTile(
               title: const Text('Français'),
-              trailing: locController.currentLanguage.value == 'fr' ? const Icon(Icons.check, color: AppTheme.primaryOrange) : null,
+              trailing: locController.currentLanguage.value == 'fr'
+                  ? const Icon(Icons.check, color: AppTheme.primaryOrange)
+                  : null,
               onTap: () {
                 locController.changeLanguage('fr');
                 Get.back();
@@ -303,7 +935,9 @@ class AccountView extends StatelessWidget {
             ),
             ListTile(
               title: const Text('Kreyòl Ayisyen'),
-              trailing: locController.currentLanguage.value == 'ht' ? const Icon(Icons.check, color: AppTheme.primaryOrange) : null,
+              trailing: locController.currentLanguage.value == 'ht'
+                  ? const Icon(Icons.check, color: AppTheme.primaryOrange)
+                  : null,
               onTap: () {
                 locController.changeLanguage('ht');
                 Get.back();
@@ -320,14 +954,23 @@ class AccountView extends StatelessWidget {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('deposit'.tr, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          'deposit'.tr,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: TextField(
           controller: amountController,
           keyboardType: TextInputType.number,
           decoration: const InputDecoration(hintText: 'Enter Amount (\$USD)'),
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr, style: const TextStyle(color: Colors.grey))),
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(
+              'cancel'.tr,
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ),
           ElevatedButton(
             onPressed: () {
               double amount = double.tryParse(amountController.text) ?? 0.0;
@@ -349,14 +992,23 @@ class AccountView extends StatelessWidget {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('withdraw'.tr, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          'withdraw'.tr,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: TextField(
           controller: amountController,
           keyboardType: TextInputType.number,
           decoration: const InputDecoration(hintText: 'Enter Amount (\$USD)'),
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr, style: const TextStyle(color: Colors.grey))),
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(
+              'cancel'.tr,
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ),
           ElevatedButton(
             onPressed: () {
               double amount = double.tryParse(amountController.text) ?? 0.0;

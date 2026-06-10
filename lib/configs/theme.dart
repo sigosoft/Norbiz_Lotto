@@ -18,19 +18,31 @@ class AppTheme {
 
   // Game Card Gradients
   static const Gradient borletteGradient = LinearGradient(
-    colors: [Color(0xFFFFB800), Color(0xFFF58220)],
+    colors: [Color(0xFFF9C80E), Color(0xFFFF8C00)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const Gradient lotto3Gradient = LinearGradient(
-    colors: [Color(0xFF29B6F6), Color(0xFF0288D1)],
+    colors: [Color(0xFF3A86FF), Color(0xFF4CC9F0)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const Gradient lotto4Gradient = LinearGradient(
-    colors: [Color(0xFFEC407A), Color(0xFFC2185B)],
+    colors: [Color(0xFFFF4D4D), Color(0xFFFF006E)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const Gradient lotto5Gradient = LinearGradient(
+    colors: [Color(0xFF2ECC71), Color(0xFF00B894)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const Gradient maryajGradient = LinearGradient(
+    colors: [Color(0xFF9B5DE5), Color(0xFF6A4C93)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

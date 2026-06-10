@@ -183,20 +183,27 @@ class HomeView extends StatelessWidget {
 
                     // Game Selection Category Cards
                     Obx(
-                      () => Row(
-                        children: [
-                          Expanded(
-                            child: GameCard(game: homeController.games[0]),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: GameCard(game: homeController.games[1]),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: GameCard(game: homeController.games[2]),
-                          ),
-                        ],
+                      () => SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        clipBehavior: Clip.none,
+                        child: Row(
+                          children: List.generate(homeController.games.length, (
+                            index,
+                          ) {
+                            final game = homeController.games[index];
+                            return Padding(
+                              padding: EdgeInsets.only(
+                                right: index == homeController.games.length - 1
+                                    ? 0.0
+                                    : 12.0,
+                              ),
+                              child: SizedBox(
+                                width: 106,
+                                child: GameCard(game: game),
+                              ),
+                            );
+                          }),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -307,62 +314,76 @@ class HomeView extends StatelessWidget {
                         fit: BoxFit.contain,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 10),
 
-                    // Game Play Section Title
-                    Text(
-                      'Borlette 2D',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
+                    // Game Play Section Title & Agent Play Cards List
+                    Obx(() {
+                      final selectedGame = homeController.games.firstWhere(
+                        (g) => g.id == homeController.selectedGameId.value,
+                        orElse: () => homeController.games.first,
+                      );
 
-                    // Agent Play Cards List
-                    _buildAgentPlayCard(
-                      agentName: 'Agent Bon Chans',
-                      drawName: 'FL Evening',
-                      nextDrawTime: '9:45 PM (Evening)',
-                      gameCategory: '2D',
-                      payout: 'x60 x20 x10',
-                      hasBorder: false,
-                      onTap: () {
-                        final borlette = homeController.games.firstWhere(
-                          (g) => g.id == 'borlette_2d',
-                        );
-                        Get.to(() => BorletteView(game: borlette));
-                      },
-                    ),
-                    _buildAgentPlayCard(
-                      agentName: 'Agent Royale',
-                      drawName: 'FL Evening',
-                      nextDrawTime: '9:45 PM (Evening)',
-                      gameCategory: '2D',
-                      payout: 'x60 x20 x10',
-                      hasBorder: false,
-                      onTap: () {
-                        final borlette = homeController.games.firstWhere(
-                          (g) => g.id == 'borlette_2d',
-                        );
-                        Get.to(() => BorletteView(game: borlette));
-                      },
-                    ),
-                    _buildAgentPlayCard(
-                      agentName: 'Agent Lucky Soleil',
-                      drawName: 'FL Evening',
-                      nextDrawTime: '9:45 PM (Evening)',
-                      gameCategory: '2D',
-                      payout: 'x60 x20 x10',
-                      hasBorder: false,
-                      onTap: () {
-                        final borlette = homeController.games.firstWhere(
-                          (g) => g.id == 'borlette_2d',
-                        );
-                        Get.to(() => BorletteView(game: borlette));
-                      },
-                    ),
+                      final String gameTitle = selectedGame.id == 'borlette_2d'
+                          ? '${selectedGame.name} ${selectedGame.category}'
+                          : selectedGame.name;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            gameTitle,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildAgentPlayCard(
+                            agentName: 'Agent Bon Chans',
+                            drawName: 'FL Evening',
+                            nextDrawTime: '9:45 PM (Evening)',
+                            gameCategory: selectedGame.category,
+                            payout: selectedGame.payout.replaceAll(
+                              'Payout: ',
+                              '',
+                            ),
+                            hasBorder: false,
+                            onTap: () {
+                              Get.to(() => BorletteView(game: selectedGame));
+                            },
+                          ),
+                          _buildAgentPlayCard(
+                            agentName: 'Agent Royale',
+                            drawName: 'FL Evening',
+                            nextDrawTime: '9:45 PM (Evening)',
+                            gameCategory: selectedGame.category,
+                            payout: selectedGame.payout.replaceAll(
+                              'Payout: ',
+                              '',
+                            ),
+                            hasBorder: false,
+                            onTap: () {
+                              Get.to(() => BorletteView(game: selectedGame));
+                            },
+                          ),
+                          _buildAgentPlayCard(
+                            agentName: 'Agent Lucky Soleil',
+                            drawName: 'FL Evening',
+                            nextDrawTime: '9:45 PM (Evening)',
+                            gameCategory: selectedGame.category,
+                            payout: selectedGame.payout.replaceAll(
+                              'Payout: ',
+                              '',
+                            ),
+                            hasBorder: false,
+                            onTap: () {
+                              Get.to(() => BorletteView(game: selectedGame));
+                            },
+                          ),
+                        ],
+                      );
+                    }),
                   ],
                 ),
               ),
@@ -457,13 +478,17 @@ class HomeView extends StatelessWidget {
           // Gradient Body Card
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFFFDBB13), Color(0xFFFE9900)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.all(Radius.circular(20)),
+            decoration: BoxDecoration(
+              gradient: gameCategory == '3D'
+                  ? AppTheme.lotto3Gradient
+                  : gameCategory == '4D'
+                  ? AppTheme.lotto4Gradient
+                  : gameCategory == '5D'
+                  ? AppTheme.lotto5Gradient
+                  : (gameCategory == '2 C' || gameCategory == '2 combo')
+                  ? AppTheme.maryajGradient
+                  : AppTheme.borletteGradient,
+              borderRadius: const BorderRadius.all(Radius.circular(20)),
             ),
             child: Column(
               children: [
@@ -478,137 +503,132 @@ class HomeView extends StatelessWidget {
                           width: 65,
                           height: 65,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFB59A30),
+                            color: gameCategory == '3D'
+                                ? const Color.fromARGB(255, 81, 126, 199)
+                                : gameCategory == '4D'
+                                ? const Color.fromARGB(255, 179, 81, 81)
+                                : gameCategory == '5D'
+                                ? const Color.fromARGB(255, 70, 168, 111)
+                                : (gameCategory == '2 C' ||
+                                      gameCategory == '2 combo')
+                                ? const Color.fromARGB(255, 120, 77, 174)
+                                : const Color.fromARGB(255, 203, 174, 72),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              // Top cluster (small decorative balls)
-                              Positioned(
-                                top: 6,
-                                left: 14,
-                                child: _buildBall(
-                                  '',
-                                  Colors.lightBlue,
-                                  size: 8,
-                                ),
-                              ),
-                              Positioned(
-                                top: 4,
-                                left: 24,
-                                child: _buildBall(
-                                  '',
-                                  Colors.greenAccent,
-                                  size: 12,
-                                ),
-                              ),
-                              Positioned(
-                                top: 6,
-                                right: 14,
-                                child: _buildBall(
-                                  '',
-                                  Colors.purpleAccent,
-                                  size: 10,
-                                ),
-                              ),
-                              Positioned(
-                                top: 16,
-                                left: 20,
-                                child: _buildBall('', Colors.yellow, size: 9),
-                              ),
-
-                              // Main foreground balls
-                              // Blue Ball '1' (bottom left)
-                              Positioned(
-                                bottom: 4,
-                                left: 4,
-                                child: _buildBall(
-                                  '1',
-                                  Colors.blue,
-                                  size: 22,
-                                  fontSize: 11,
-                                ),
-                              ),
-                              // Red Ball '7' (middle/right)
-                              Positioned(
-                                bottom: 12,
-                                right: 18,
-                                child: _buildBall(
-                                  '7',
-                                  Colors.red,
-                                  size: 18,
-                                  fontSize: 9,
-                                ),
-                              ),
-                              // Green Ball '8' (bottom right)
-                              Positioned(
-                                bottom: 4,
-                                right: 4,
-                                child: _buildBall(
-                                  '8',
-                                  Colors.green,
-                                  size: 20,
-                                  fontSize: 10,
-                                ),
-                              ),
-                            ],
-                          ),
+                          child: Image.asset("lib/assets/images/cardimage.png"),
                         ),
                         const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Stack(
+                          alignment: Alignment.centerLeft,
+                          clipBehavior: Clip.none,
                           children: [
-                            Text(
-                              drawName,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
+                            Positioned(
+                              left: -20,
+                              top: -20,
+                              width: 160,
+                              height: 110,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: RadialGradient(
+                                    colors: [
+                                      Colors.white.withOpacity(0.38),
+                                      Colors.white.withOpacity(0.0),
+                                    ],
+                                    radius: 0.5,
+                                  ),
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Pick $gameCategory',
-                              style: const TextStyle(
-                                color: Color(0xFF002C8B),
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            const Text(
-                              'Pick 00-99',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  drawName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  (gameCategory == '2 C' ||
+                                          gameCategory == '2 combo')
+                                      ? 'Pick 2 combo'
+                                      : 'Pick $gameCategory',
+                                  style: const TextStyle(
+                                    color: Color(0xFF002C8B),
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                if (gameCategory != '2 C' &&
+                                    gameCategory != '2 combo') ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    gameCategory == '3D'
+                                        ? 'Pick 000-999'
+                                        : gameCategory == '4D'
+                                        ? 'Pick 0000-9999'
+                                        : gameCategory == '5D'
+                                        ? 'Pick 3+2 D Combo'
+                                        : 'Pick 00-99',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ],
                         ),
                       ],
                     ),
                     // Payout info column
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    Stack(
+                      alignment: Alignment.centerRight,
+                      clipBehavior: Clip.none,
                       children: [
-                        const Text(
-                          'WIN',
-                          style: TextStyle(
-                            color: Color(0xFF002C8B),
-                            fontWeight: FontWeight.w900,
-                            fontSize: 14,
+                        Positioned(
+                          right: -20,
+                          top: -30,
+                          width: 120,
+                          height: 110,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: RadialGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.38),
+                                  Colors.white.withOpacity(0.0),
+                                ],
+                                radius: 0.5,
+                              ),
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          payout,
-                          style: const TextStyle(
-                            color: Color(0xFF002C8B),
-                            fontWeight: FontWeight.w900,
-                            fontSize: 14,
-                          ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            const Text(
+                              'WIN',
+                              style: TextStyle(
+                                color: Color(0xFF002C8B),
+                                fontWeight: FontWeight.w900,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              payout,
+                              style: const TextStyle(
+                                color: Color(0xFF002C8B),
+                                fontWeight: FontWeight.w900,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -672,8 +692,9 @@ class GameCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final homeController = Get.find<HomeController>();
     return GestureDetector(
-      onTap: () => Get.to(() => BorletteView(game: game)),
+      onTap: () => homeController.selectedGameId.value = game.id,
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.topCenter,
@@ -728,6 +749,10 @@ class GameCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
+                border: Border.all(
+                  color: game.cardGradient.colors.first,
+                  width: 3.0,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.12),

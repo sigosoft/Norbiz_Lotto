@@ -10,11 +10,13 @@ class GameController extends GetxController {
   // Selected numbers state
   var selectedNumbers = ''.obs;
   var enteredAmount = ''.obs;
+  var activeTarget = 'selection'.obs;
 
   // Tchala list and search
   var tchalaList = <DreamModel>[].obs;
   var filteredTchala = <DreamModel>[].obs;
   var tchalaSearchQuery = ''.obs;
+  final tchalaController = TextEditingController();
 
   @override
   void onInit() {
@@ -61,9 +63,11 @@ class GameController extends GetxController {
       filteredTchala.value = tchalaList;
     } else {
       filteredTchala.value = tchalaList
-          .where((item) =>
-              item.word.toLowerCase().contains(query.toLowerCase()) ||
-              item.numbers.any((n) => n.contains(query)))
+          .where(
+            (item) =>
+                item.word.toLowerCase().contains(query.toLowerCase()) ||
+                item.numbers.any((n) => n.contains(query)),
+          )
           .toList();
     }
   }
@@ -73,28 +77,64 @@ class GameController extends GetxController {
     int maxLen = 2; // Default for 2D
     if (activeGame.category == '3D') maxLen = 3;
     if (activeGame.category == '4D') maxLen = 4;
+    if (activeGame.category == '5D') maxLen = 5;
+    if (activeGame.category == '2 C' || activeGame.category == '2 combo')
+      maxLen = 4;
 
-    if (selectedNumbers.value.length < maxLen) {
-      selectedNumbers.value += char;
+    if (activeTarget.value == 'selection') {
+      if (selectedNumbers.value.length < maxLen) {
+        selectedNumbers.value += char;
+      }
+      if (selectedNumbers.value.length == maxLen) {
+        activeTarget.value = 'none';
+      }
+    } else if (activeTarget.value == 'amount') {
+      if (enteredAmount.value.length < 5) {
+        enteredAmount.value += char;
+      }
     }
   }
 
   void pressBackspace() {
-    if (selectedNumbers.value.isNotEmpty) {
-      selectedNumbers.value = selectedNumbers.value.substring(0, selectedNumbers.value.length - 1);
+    if (activeTarget.value == 'amount') {
+      if (enteredAmount.value.isNotEmpty) {
+        enteredAmount.value = enteredAmount.value.substring(
+          0,
+          enteredAmount.value.length - 1,
+        );
+      } else {
+        activeTarget.value = 'selection';
+        if (selectedNumbers.value.isNotEmpty) {
+          selectedNumbers.value = selectedNumbers.value.substring(
+            0,
+            selectedNumbers.value.length - 1,
+          );
+        }
+      }
+    } else {
+      if (selectedNumbers.value.isNotEmpty) {
+        selectedNumbers.value = selectedNumbers.value.substring(
+          0,
+          selectedNumbers.value.length - 1,
+        );
+      }
     }
   }
 
   void clearSelection() {
     selectedNumbers.value = '';
     enteredAmount.value = '';
+    activeTarget.value = 'none';
   }
 
   void performQuickPick() {
     int len = 2;
     if (activeGame.category == '3D') len = 3;
     if (activeGame.category == '4D') len = 4;
-    
+    if (activeGame.category == '5D') len = 5;
+    if (activeGame.category == '2 C' || activeGame.category == '2 combo')
+      len = 4;
+
     // Generate random digits
     var random = DateTime.now().millisecond;
     String picks = '';
@@ -102,12 +142,16 @@ class GameController extends GetxController {
       picks += ((random + i * 7) % 10).toString();
     }
     selectedNumbers.value = picks;
+    activeTarget.value = 'none';
   }
 
   // Validation
   bool validateBet(double amount) {
     // Simulate sales limit limit block for '99' or '9,9' matching the warning screen
-    if (selectedNumbers.value == '99' || selectedNumbers.value == '999' || selectedNumbers.value == '9999') {
+    if (selectedNumbers.value == '99' ||
+        selectedNumbers.value == '999' ||
+        selectedNumbers.value == '9999' ||
+        selectedNumbers.value == '99999') {
       showNumberUnavailableModal(selectedNumbers.value);
       return false;
     }
@@ -116,46 +160,79 @@ class GameController extends GetxController {
   }
 
   void showNumberUnavailableModal(String number) {
-    // Standard GetX bottom sheet/dialog matching figma
+    final formattedNumber = number.split('').join(',');
     Get.dialog(
       Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Stack(
+          children: [
+            Positioned(
+              top: 12,
+              right: 12,
+              child: GestureDetector(
+                onTap: () => Get.back(),
+                child: const Icon(Icons.close, color: Colors.grey),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 32.0,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  GestureDetector(
-                    onTap: () => Get.back(),
-                    child: const Icon(Icons.close, color: Colors.grey),
+                  const SizedBox(height: 12),
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.orange,
+                    size: 64,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'number_limit_title'.trParams({'num': formattedNumber}),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: Color(0xFF1E293B),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'number_limit_desc'.tr,
+                    style: const TextStyle(color: Colors.grey, fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Get.back(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFE9900),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        minimumSize: const Size(double.infinity, 48),
+                        elevation: 0,
+                      ),
+                      child: Text('choose_another'.tr),
+                    ),
                   ),
                 ],
               ),
-              const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 64),
-              const SizedBox(height: 16),
-              Text(
-                'number_limit_title'.trParams({'num': number}),
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'number_limit_desc'.tr,
-                style: const TextStyle(color: Colors.grey, fontSize: 14),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => Get.back(),
-                child: Text('choose_another'.tr),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  @override
+  void onClose() {
+    tchalaController.dispose();
+    super.onClose();
   }
 }

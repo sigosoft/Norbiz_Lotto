@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../models/game_model.dart';
 import '../configs/theme.dart';
+import 'game_controller.dart';
 
 class HomeController extends GetxController {
   // Navigation
@@ -13,6 +14,7 @@ class HomeController extends GetxController {
   // Games list
   var games = <GameModel>[].obs;
   var filteredGames = <GameModel>[].obs;
+  var selectedGameId = 'borlette_2d'.obs;
 
   // Search
   var searchQuery = ''.obs;
@@ -52,6 +54,24 @@ class HomeController extends GetxController {
         minBet: 10.0,
         maxBet: 500.0,
       ),
+      GameModel(
+        id: 'lotto_5d',
+        name: 'Lotto 5',
+        payout: 'Payout: x50,000',
+        category: '5D',
+        cardGradient: AppTheme.lotto5Gradient,
+        minBet: 10.0,
+        maxBet: 500.0,
+      ),
+      GameModel(
+        id: 'maryaj',
+        name: 'Maryaj',
+        payout: 'Payout: x50,000',
+        category: '2 C',
+        cardGradient: AppTheme.maryajGradient,
+        minBet: 10.0,
+        maxBet: 500.0,
+      ),
     ];
     games.value = gameList;
     filteredGames.value = gameList;
@@ -72,5 +92,12 @@ class HomeController extends GetxController {
 
   void changeNavIndex(int index) {
     currentNavIndex.value = index;
+    if (index == 3) {
+      try {
+        final gameController = Get.find<GameController>();
+        gameController.tchalaController.clear();
+        gameController.tchalaSearchQuery.value = '';
+      } catch (_) {}
+    }
   }
 }

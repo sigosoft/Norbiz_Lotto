@@ -67,7 +67,7 @@ class AppTranslations extends Translations {
       'anti_fraud': 'Anti-Fraud Policy',
       'under_18': 'Under-18 Protection',
       'help_center': 'Help Center',
-      'logout': 'Logout',
+      'logout': 'Log Out',
       'delete_account': 'Delete Account',
       'logout_confirm': 'Are you sure you want to logout?',
       'delete_confirm': 'Are you sure you want to delete your account?',
@@ -108,6 +108,9 @@ class AppTranslations extends Translations {
       'number_limit_desc':
           'This number is no longer available for the selected draw because the maximum sales limit has been reached.',
       'choose_another': 'Choose Another Numbers',
+      'ticket_added_success': 'Ticket has been successfully added to cart',
+      'play_more': 'Play More',
+      'view_cart': 'View Cart',
     },
     'fr': {
       'play_anytime': 'Jouer à tout moment',
@@ -216,6 +219,9 @@ class AppTranslations extends Translations {
       'number_limit_desc':
           'Ce numéro n\'est plus disponible pour le tirage sélectionné car la limite maximale de vente a été atteinte.',
       'choose_another': 'Choisir d\'autres numéros',
+      'ticket_added_success': 'Le ticket a été ajouté au panier avec succès',
+      'play_more': 'Jouer plus',
+      'view_cart': 'Voir le panier',
     },
     'ht': {
       'play_anytime': 'Jwe Nenpòt Lè',
@@ -322,6 +328,9 @@ class AppTranslations extends Translations {
       'number_limit_desc':
           'Nimewo sa a pa disponib ankò pou tiraj sa a paske limit lavant maksimòm nan rive.',
       'choose_another': 'Chwazi Lòt Nimewo',
+      'ticket_added_success': 'Tikè a te ajoute nan panyen an avèk siksè',
+      'play_more': 'Jwe plis',
+      'view_cart': 'Gade Panyen',
     },
   };
 }
