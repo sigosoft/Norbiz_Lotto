@@ -3,10 +3,95 @@ import 'package:get/get.dart';
 import '../../configs/theme.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/account_controller.dart';
+import '../../controllers/localization_controller.dart';
 import '../../models/bank_model.dart';
 import '../../models/transaction_model.dart';
 import '../../configs/toast.dart';
 import '../auth/signin_view.dart';
+
+// ------------------------------------------------------------
+// Helper: Dashed Border Container
+// ------------------------------------------------------------
+class DashedBorderContainer extends StatelessWidget {
+  final Widget child;
+  final double borderRadius;
+  final Color color;
+  final double strokeWidth;
+  final double dashWidth;
+  final double dashSpace;
+
+  const DashedBorderContainer({
+    Key? key,
+    required this.child,
+    this.borderRadius = 16,
+    this.color = const Color(0xFFCBD5E1),
+    this.strokeWidth = 1.5,
+    this.dashWidth = 6,
+    this.dashSpace = 4,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _DashedBorderPainter(
+        borderRadius: borderRadius,
+        color: color,
+        strokeWidth: strokeWidth,
+        dashWidth: dashWidth,
+        dashSpace: dashSpace,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: child,
+      ),
+    );
+  }
+}
+
+class _DashedBorderPainter extends CustomPainter {
+  final double borderRadius;
+  final Color color;
+  final double strokeWidth;
+  final double dashWidth;
+  final double dashSpace;
+
+  _DashedBorderPainter({
+    required this.borderRadius,
+    required this.color,
+    required this.strokeWidth,
+    required this.dashWidth,
+    required this.dashSpace,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Radius.circular(borderRadius),
+    );
+
+    final path = Path()..addRRect(rrect);
+    final metrics = path.computeMetrics();
+    for (final metric in metrics) {
+      double distance = 0;
+      while (distance < metric.length) {
+        canvas.drawPath(
+          metric.extractPath(distance, distance + dashWidth),
+          paint,
+        );
+        distance += dashWidth + dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedBorderPainter oldDelegate) => false;
+}
 
 // ------------------------------------------------------------
 // 1. Account Info / Edit Profile View
@@ -17,12 +102,14 @@ class AccountInfoView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authController = Get.find<AuthController>();
+    final localizationController = Get.find<LocalizationController>();
 
+    final nameParts = authController.userName.value.split(' ');
     final firstNameController = TextEditingController(
-      text: authController.userName.value.split(' ').first,
+      text: nameParts.isNotEmpty ? nameParts.first : '',
     );
     final lastNameController = TextEditingController(
-      text: authController.userName.value.split(' ').last,
+      text: nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '',
     );
     final phoneController = TextEditingController(
       text: authController.userPhone.value,
@@ -33,314 +120,762 @@ class AccountInfoView extends StatelessWidget {
     final dobController = TextEditingController(
       text: authController.userDob.value,
     );
+    final passwordController = TextEditingController(text: '123456789');
     var genderVal = authController.userGender.value.obs;
+    var obscurePassword = true.obs;
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: AppTheme.primaryDarkBlue,
+    final customHeaderRow = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          GestureDetector(
+            onTap: () => Get.back(),
+            child: Container(
+              height: 38,
+              width: 38,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.chevron_left_rounded,
+                color: Color(0xFF0F172A),
+                size: 24,
+              ),
+            ),
           ),
-          onPressed: () => Get.back(),
-        ),
-        title: Text(
-          'account_info'.tr,
-          style: const TextStyle(
-            color: AppTheme.primaryDarkBlue,
-            fontWeight: FontWeight.bold,
+          Text(
+            'account_info'.tr,
+            style: const TextStyle(
+              color: Color(0xFF0F172A),
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
           ),
-        ),
-        centerTitle: true,
+          const SizedBox(width: 38), // Spacer of same width to center the title
+        ],
       ),
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'first_name'.tr,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-                color: AppTheme.textGrey,
-              ),
-            ),
-            const SizedBox(height: 6),
-            TextField(controller: firstNameController),
-            const SizedBox(height: 16),
+    );
 
-            Text(
-              'last_name'.tr,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-                color: AppTheme.textGrey,
-              ),
-            ),
-            const SizedBox(height: 6),
-            TextField(controller: lastNameController),
-            const SizedBox(height: 16),
+    return Obx(() {
+      final textDirection = localizationController.textDirection;
 
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'gender'.tr,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          color: AppTheme.textGrey,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Obx(
-                        () => Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: AppTheme.lightGreyBg,
-                            borderRadius: BorderRadius.circular(12),
+      return Directionality(
+        textDirection: textDirection,
+        child: Scaffold(
+          backgroundColor: const Color(0xFFEFF3FD),
+          body: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: AppTheme.pageBackgroundGradient,
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  customHeaderRow,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildTextField(
+                            label: 'first_name'.tr,
+                            controller: firstNameController,
                           ),
-                          child: DropdownButton<String>(
-                            value: genderVal.value,
-                            isExpanded: true,
-                            underline: const SizedBox(),
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'Male',
-                                child: Text('Male'),
+                          const SizedBox(height: 16),
+
+                          _buildTextField(
+                            label: 'last_name'.tr,
+                            controller: lastNameController,
+                          ),
+                          const SizedBox(height: 16),
+
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'gender'.tr,
+                                      style: const TextStyle(
+                                        color: Color(0xFF94A3B8),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Obx(
+                                      () => Container(
+                                        height: 48,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          border: Border.all(
+                                            color: const Color(0xFFE2E8F0),
+                                            width: 1.0,
+                                          ),
+                                        ),
+                                        alignment: Alignment.center,
+                                        child: DropdownButtonHideUnderline(
+                                          child: DropdownButton<String>(
+                                            value: genderVal.value,
+                                            isExpanded: true,
+                                            icon: const Icon(
+                                              Icons.keyboard_arrow_down_rounded,
+                                              color: Color(0xFF0F172A),
+                                            ),
+                                            style: const TextStyle(
+                                              color: Color(0xFF0F172A),
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            items: const [
+                                              DropdownMenuItem(
+                                                value: 'Male',
+                                                child: Text('Male'),
+                                              ),
+                                              DropdownMenuItem(
+                                                value: 'Female',
+                                                child: Text('Female'),
+                                              ),
+                                            ],
+                                            onChanged: (val) {
+                                              if (val != null)
+                                                genderVal.value = val;
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              DropdownMenuItem(
-                                value: 'Female',
-                                child: Text('Female'),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _buildTextField(
+                                  label: 'dob'.tr,
+                                  controller: dobController,
+                                ),
                               ),
                             ],
-                            onChanged: (val) {
-                              if (val != null) genderVal.value = val;
-                            },
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'dob'.tr,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          color: AppTheme.textGrey,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: dobController,
-                        decoration: const InputDecoration(
-                          hintText: 'YYYY-MM-DD',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
+                          const SizedBox(height: 16),
 
-            Text(
-              'phone_number'.tr,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-                color: AppTheme.textGrey,
+                          _buildTextField(
+                            label: 'phone_number'.tr,
+                            controller: phoneController,
+                            keyboardType: TextInputType.phone,
+                          ),
+                          const SizedBox(height: 16),
+
+                          _buildTextField(
+                            label: 'Email',
+                            controller: emailController,
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                          const SizedBox(height: 16),
+
+                          Obx(
+                            () => _buildTextField(
+                              label: 'Password',
+                              controller: passwordController,
+                              obscureText: obscurePassword.value,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  obscurePassword.value
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                  color: const Color(0xFF94A3B8),
+                                  size: 20,
+                                ),
+                                onPressed: () {
+                                  obscurePassword.value =
+                                      !obscurePassword.value;
+                                },
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 40,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Get.to(() => const EditAccountInfoView());
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFE9900),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: Text(
+                                'edit'.tr,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          Center(
+                            child: TextButton.icon(
+                              onPressed: () =>
+                                  _showDeleteAccountBottomSheet(context),
+                              icon: Image.asset(
+                                "lib/assets/images/Delete.png",
+                                width: 15,
+                                height: 15,
+                              ),
+                              label: Text(
+                                'delete_account'.tr,
+                                style: const TextStyle(
+                                  color: Color(0xFFEF4444),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 6),
-            TextField(controller: phoneController),
-            const SizedBox(height: 16),
-
-            Text(
-              'Email',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-                color: AppTheme.textGrey,
-              ),
-            ),
-            const SizedBox(height: 6),
-            TextField(controller: emailController),
-            const SizedBox(height: 32),
-
-            ElevatedButton(
-              onPressed: () {
-                authController.updateProfile(
-                  firstNameController.text,
-                  lastNameController.text,
-                  phoneController.text,
-                  emailController.text,
-                  genderVal.value,
-                  dobController.text,
-                );
-                Get.back();
-                showToast('Profile updated successfully.'.tr, title: 'Success');
-              },
-              child: Text('save'.tr),
-            ),
-            const SizedBox(height: 16),
-
-            Center(
-              child: TextButton.icon(
-                onPressed: () => _showDeleteAccountBottomSheet(context),
-                icon: const Icon(Icons.delete_outline, color: Colors.red),
-                label: Text(
-                  'delete_account'.tr,
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+      );
+    });
+  }
+
+  Widget _buildTextField({
+    required String label,
+    required TextEditingController controller,
+    bool obscureText = false,
+    Widget? suffixIcon,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF94A3B8),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          obscureText: obscureText,
+          keyboardType: keyboardType,
+          style: const TextStyle(
+            color: Color(0xFF0F172A),
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+          decoration: InputDecoration(
+            fillColor: Colors.white,
+            filled: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFFE2E8F0),
+                width: 1.0,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFFFE9900),
+                width: 1.5,
+              ),
+            ),
+            suffixIcon: suffixIcon,
+          ),
+        ),
+      ],
     );
   }
 
   void _showDeleteAccountBottomSheet(BuildContext context) {
     Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
+      Material(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header with Close Button
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                const Text(
-                  'Delete Account',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 22,
-                    color: Color(0xFF0F172A),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header with Close Button
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  const Text(
+                    'Delete Account',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 22,
+                      color: Color(0xFF0F172A),
+                    ),
                   ),
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: GestureDetector(
-                    onTap: () => Get.back(),
-                    child: Container(
-                      height: 36,
-                      width: 36,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: const Color(0xFFE2E8F0),
-                          width: 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.03),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      onTap: () => Get.back(),
+                      child: Container(
+                        height: 36,
+                        width: 36,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(0xFFE2E8F0),
+                            width: 1,
                           ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.close_rounded,
-                        color: Color(0xFF64748B),
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Subtitle
-            const Text(
-              'Are you sure you want to delete your account?',
-              style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            // Action Buttons Row
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: () => Get.back(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFF7ED),
-                        foregroundColor: const Color(0xFFFE9900),
-                        shape: const StadiumBorder(),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.close_rounded,
+                          color: Color(0xFF64748B),
+                          size: 20,
                         ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Get.back();
-                        Get.offAll(() => const SignInView());
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFE9900),
-                        foregroundColor: Colors.white,
-                        shape: const StadiumBorder(),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'Delete',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Subtitle
+              const Text(
+                'Are you sure you want to delete your account?',
+                style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              // Action Buttons Row
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () => Get.back(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFFF7ED),
+                          foregroundColor: const Color(0xFFFE9900),
+                          shape: const StadiumBorder(),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-          ],
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Get.back();
+                          Get.offAll(() => const SignInView());
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFE9900),
+                          foregroundColor: Colors.white,
+                          shape: const StadiumBorder(),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Delete',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+    );
+  }
+}
+
+// ------------------------------------------------------------
+// 1b. Edit Account Info View
+// ------------------------------------------------------------
+class EditAccountInfoView extends StatelessWidget {
+  const EditAccountInfoView({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final authController = Get.find<AuthController>();
+    final localizationController = Get.find<LocalizationController>();
+
+    final nameParts = authController.userName.value.split(' ');
+    final firstNameController = TextEditingController(
+      text: nameParts.isNotEmpty ? nameParts.first : '',
+    );
+    final lastNameController = TextEditingController(
+      text: nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '',
+    );
+    final phoneController = TextEditingController(
+      text: authController.userPhone.value,
+    );
+    final emailController = TextEditingController(
+      text: authController.userEmail.value,
+    );
+    final dobController = TextEditingController(
+      text: authController.userDob.value,
+    );
+    final passwordController = TextEditingController(text: '123456789');
+    var genderVal = authController.userGender.value.obs;
+    var obscurePassword = true.obs;
+
+    return Obx(() {
+      final textDirection = localizationController.textDirection;
+      return Directionality(
+        textDirection: textDirection,
+        child: Scaffold(
+          backgroundColor: const Color(0xFFEFF3FD),
+          body: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: AppTheme.pageBackgroundGradient,
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  // Header Row
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 12.0,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        GestureDetector(
+                          onTap: () => Get.back(),
+                          child: Container(
+                            height: 38,
+                            width: 38,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.chevron_left_rounded,
+                              color: Color(0xFF0F172A),
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                        const Text(
+                          'Edit Information',
+                          style: TextStyle(
+                            color: Color(0xFF0F172A),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 38),
+                      ],
+                    ),
+                  ),
+                  // Scrollable Form
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildTextField(
+                            label: 'First Name',
+                            controller: firstNameController,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            label: 'Last Name',
+                            controller: lastNameController,
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Gender',
+                                      style: TextStyle(
+                                        color: Color(0xFF94A3B8),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Obx(
+                                      () => Container(
+                                        height: 48,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          border: Border.all(
+                                            color: const Color(0xFFE2E8F0),
+                                            width: 1.0,
+                                          ),
+                                        ),
+                                        alignment: Alignment.center,
+                                        child: DropdownButtonHideUnderline(
+                                          child: DropdownButton<String>(
+                                            value: genderVal.value,
+                                            isExpanded: true,
+                                            icon: const Icon(
+                                              Icons.keyboard_arrow_down_rounded,
+                                              color: Color(0xFF0F172A),
+                                            ),
+                                            style: const TextStyle(
+                                              color: Color(0xFF0F172A),
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            items: const [
+                                              DropdownMenuItem(
+                                                value: 'Male',
+                                                child: Text('Male'),
+                                              ),
+                                              DropdownMenuItem(
+                                                value: 'Female',
+                                                child: Text('Female'),
+                                              ),
+                                            ],
+                                            onChanged: (val) {
+                                              if (val != null)
+                                                genderVal.value = val;
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _buildTextField(
+                                  label: 'Date of Birth',
+                                  controller: dobController,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            label: 'Phone Number',
+                            controller: phoneController,
+                            keyboardType: TextInputType.phone,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            label: 'Email',
+                            controller: emailController,
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                          const SizedBox(height: 16),
+                          Obx(
+                            () => _buildTextField(
+                              label: 'Password',
+                              controller: passwordController,
+                              obscureText: obscurePassword.value,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  obscurePassword.value
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                  color: const Color(0xFF94A3B8),
+                                  size: 20,
+                                ),
+                                onPressed: () {
+                                  obscurePassword.value =
+                                      !obscurePassword.value;
+                                },
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 40,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                authController.updateProfile(
+                                  firstNameController.text,
+                                  lastNameController.text,
+                                  phoneController.text,
+                                  emailController.text,
+                                  genderVal.value,
+                                  dobController.text,
+                                );
+                                Get.back();
+                                showToast(
+                                  'Profile updated successfully.'.tr,
+                                  title: 'Success',
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFE9900),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Text(
+                                'Update',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildTextField({
+    required String label,
+    required TextEditingController controller,
+    bool obscureText = false,
+    Widget? suffixIcon,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF94A3B8),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          obscureText: obscureText,
+          keyboardType: keyboardType,
+          style: const TextStyle(
+            color: Color(0xFF0F172A),
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+          decoration: InputDecoration(
+            fillColor: Colors.white,
+            filled: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFFE2E8F0),
+                width: 1.0,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFFFE9900),
+                width: 1.5,
+              ),
+            ),
+            suffixIcon: suffixIcon,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -354,161 +889,240 @@ class TransactionsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accountController = Get.find<AccountController>();
+    final localizationController = Get.find<LocalizationController>();
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: AppTheme.primaryDarkBlue,
-          ),
-          onPressed: () => Get.back(),
-        ),
-        title: Text(
-          'transactions'.tr,
-          style: const TextStyle(
-            color: AppTheme.primaryDarkBlue,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      backgroundColor: AppTheme.lightGreyBg,
-      body: Column(
+    final customHeaderRow = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Filter Tabs
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: ['All', 'Deposits', 'Withdrawls'].map((filter) {
-                return Obx(() {
-                  final isSelected =
-                      accountController.activeTxFilter.value == filter;
-                  return Expanded(
-                    child: GestureDetector(
-                      onTap: () => accountController.changeTxFilter(filter),
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppTheme.primaryOrange
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppTheme.primaryOrange
-                                : Colors.grey.shade300,
-                          ),
-                        ),
-                        child: Text(
-                          filter,
-                          style: TextStyle(
-                            color: isSelected
-                                ? Colors.white
-                                : AppTheme.primaryDarkBlue,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                });
-              }).toList(),
+          GestureDetector(
+            onTap: () => Get.back(),
+            child: Container(
+              height: 38,
+              width: 38,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.chevron_left_rounded,
+                color: Color(0xFF0F172A),
+                size: 24,
+              ),
             ),
           ),
-
-          Expanded(
-            child: Obx(() {
-              final list = accountController.filteredTransactions;
-              if (list.isEmpty) {
-                return const Center(child: Text('No transaction history.'));
-              }
-              return ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: list.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 8),
-                itemBuilder: (context, index) {
-                  final tx = list[index];
-                  final isDeposit = tx.type == TransactionType.deposit;
-
-                  return Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: isDeposit
-                                ? Colors.green.shade50
-                                : Colors.red.shade50,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            isDeposit
-                                ? Icons.arrow_downward
-                                : Icons.arrow_upward,
-                            color: isDeposit ? Colors.green : Colors.red,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                tx.title,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.primaryDarkBlue,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                tx.date,
-                                style: const TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              '${isDeposit ? '+' : '-'}\$${tx.amount.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: isDeposit ? Colors.green : Colors.red,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            _buildTxStatusTag(tx.status),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            }),
+          Text(
+            'transactions'.tr,
+            style: const TextStyle(
+              color: Color(0xFF0F172A),
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
           ),
+          const SizedBox(width: 38), // Spacer of same width to center the title
         ],
       ),
     );
+
+    return Obx(() {
+      final textDirection = localizationController.textDirection;
+
+      return Directionality(
+        textDirection: textDirection,
+        child: Scaffold(
+          backgroundColor: const Color(0xFFEFF3FD),
+          body: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: AppTheme.pageBackgroundGradient,
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  customHeaderRow,
+                  // Filter Tabs
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: ['All', 'Deposits', 'Withdrawals'].map((
+                        filter,
+                      ) {
+                        return Obx(() {
+                          final isSelected =
+                              accountController.activeTxFilter.value == filter;
+                          return Expanded(
+                            child: GestureDetector(
+                              onTap: () =>
+                                  accountController.changeTxFilter(filter),
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? AppTheme.primaryOrange
+                                      : Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? AppTheme.primaryOrange
+                                        : Colors.grey.shade300,
+                                  ),
+                                ),
+                                child: Text(
+                                  filter == 'Deposits'
+                                      ? 'Deposits'
+                                      : filter == 'Withdrawals'
+                                      ? 'Withdrawals'
+                                      : 'All',
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : AppTheme.primaryDarkBlue,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        });
+                      }).toList(),
+                    ),
+                  ),
+
+                  // Transactions list
+                  Expanded(
+                    child: Obx(() {
+                      final list = accountController.filteredTransactions;
+                      if (list.isEmpty) {
+                        return Center(
+                          child: Text(
+                            'no_transactions'.tr,
+                            style: const TextStyle(
+                              color: AppTheme.primaryDarkBlue,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        );
+                      }
+                      return ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: list.length,
+                        itemBuilder: (context, index) {
+                          final tx = list[index];
+                          final isDeposit = tx.type == TransactionType.deposit;
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: isDeposit
+                                        ? Colors.green.shade50
+                                        : Colors.orange.shade50,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    isDeposit
+                                        ? Icons.south_west_rounded
+                                        : Icons.north_east_rounded,
+                                    color: isDeposit
+                                        ? Colors.green
+                                        : Colors.orange,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        tx.title,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.primaryDarkBlue,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.access_time_rounded,
+                                            size: 10,
+                                            color: Colors.grey,
+                                          ),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            tx.date,
+                                            style: const TextStyle(
+                                              color: Colors.grey,
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      '${isDeposit ? '+' : '-'}\$${tx.amount.toStringAsFixed(2)}',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: isDeposit
+                                            ? Colors.green
+                                            : (tx.status ==
+                                                      TransactionStatus
+                                                          .processing
+                                                  ? Colors.orange
+                                                  : Colors.red),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    _buildTxStatusTag(tx.status),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    }),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    });
   }
 
   Widget _buildTxStatusTag(TransactionStatus status) {
@@ -553,161 +1167,284 @@ class BankAccountsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accountController = Get.find<AccountController>();
+    final localizationController = Get.find<LocalizationController>();
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: AppTheme.primaryDarkBlue,
+    final customHeaderRow = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          GestureDetector(
+            onTap: () => Get.back(),
+            child: Container(
+              height: 38,
+              width: 38,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.chevron_left_rounded,
+                color: Color(0xFF0F172A),
+                size: 24,
+              ),
+            ),
           ),
-          onPressed: () => Get.back(),
-        ),
-        title: Text(
-          'bank_accounts'.tr,
-          style: const TextStyle(
-            color: AppTheme.primaryDarkBlue,
-            fontWeight: FontWeight.bold,
+          Text(
+            'Bank Accounts',
+            style: const TextStyle(
+              color: Color(0xFF0F172A),
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
           ),
-        ),
-        centerTitle: true,
-      ),
-      backgroundColor: AppTheme.lightGreyBg,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'saved_accounts'.tr,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppTheme.primaryDarkBlue,
-                fontSize: 15,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Accounts List
-            Obx(
-              () => ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: accountController.savedAccounts.length,
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final acc = accountController.savedAccounts[index];
-                  return Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryOrange.withOpacity(0.15),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.account_balance,
-                            color: AppTheme.primaryOrange,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                acc.accountHolder,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.primaryDarkBlue,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${acc.bankName} • ${acc.accountNumber}',
-                                style: const TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.delete_outline,
-                            color: Colors.red,
-                            size: 20,
-                          ),
-                          onPressed: () =>
-                              accountController.deleteBankAccount(acc.id),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Add another account container with dash border
-            GestureDetector(
-              onTap: () => _showAddAccountSheet(context, accountController),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 24,
-                  horizontal: 16,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppTheme.primaryOrange,
-                    width: 1.5,
-                    style: BorderStyle.solid,
-                  ), // Dash mock
-                ),
-                child: Column(
-                  children: [
-                    const Icon(
-                      Icons.add_card_outlined,
-                      color: AppTheme.primaryOrange,
-                      size: 32,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'add_bank'.tr,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryOrange,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'withdraw_desc'.tr,
-                      style: const TextStyle(color: Colors.grey, fontSize: 11),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+          const SizedBox(width: 38), // Spacer of same width to center the title
+        ],
       ),
     );
+
+    return Obx(() {
+      final textDirection = localizationController.textDirection;
+
+      return Directionality(
+        textDirection: textDirection,
+        child: Scaffold(
+          backgroundColor: const Color(0xFFEFF3FD),
+          body: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: AppTheme.pageBackgroundGradient,
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  customHeaderRow,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Accounts List
+                          Obx(
+                            () => ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: accountController.savedAccounts.length,
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(height: 12),
+                              itemBuilder: (context, index) {
+                                final acc =
+                                    accountController.savedAccounts[index];
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  clipBehavior: Clip.hardEdge,
+                                  child: IntrinsicHeight(
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        // Left: full-height Saving Account.png background image
+                                        Image.asset(
+                                          'lib/assets/images/Saving Account.png',
+                                          width: 120,
+                                          fit: BoxFit.cover,
+                                        ),
+                                        // Right: label+value rows with asset icon buttons
+                                        Expanded(
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 14,
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                // Row 1: Account Holder + Edit
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          const Text(
+                                                            'Account Holder',
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors.grey,
+                                                              fontSize: 10,
+                                                            ),
+                                                          ),
+                                                          const SizedBox(
+                                                            height: 2,
+                                                          ),
+                                                          Text(
+                                                            acc.accountHolder,
+                                                            style: const TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              color: AppTheme
+                                                                  .primaryDarkBlue,
+                                                              fontSize: 13,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    // Edit image button (no background)
+                                                    GestureDetector(
+                                                      onTap: () {},
+                                                      child: Image.asset(
+                                                        'lib/assets/images/Edit.png',
+                                                        width: 18,
+                                                        height: 18,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 10),
+                                                // Row 2: Account Number + Delete
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          const Text(
+                                                            'Account Number',
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors.grey,
+                                                              fontSize: 10,
+                                                            ),
+                                                          ),
+                                                          const SizedBox(
+                                                            height: 2,
+                                                          ),
+                                                          Text(
+                                                            acc.accountNumber,
+                                                            style: const TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              color: AppTheme
+                                                                  .primaryDarkBlue,
+                                                              fontSize: 13,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    // Delete image button (no background)
+                                                    GestureDetector(
+                                                      onTap: () =>
+                                                          accountController
+                                                              .deleteBankAccount(
+                                                                acc.id,
+                                                              ),
+                                                      child: Image.asset(
+                                                        'lib/assets/images/Delete.png',
+                                                        width: 18,
+                                                        height: 18,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+
+                          const SizedBox(height: 150),
+
+                          // Add another account container with dashed border
+                          GestureDetector(
+                            onTap: () => _showAddAccountSheet(
+                              context,
+                              accountController,
+                            ),
+                            child: DashedBorderContainer(
+                              borderRadius: 16,
+                              color: const Color(0xFFCBD5E1),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 28,
+                                  horizontal: 16,
+                                ),
+                                child: Column(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFEFF3FD),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Image.asset(
+                                        "lib/assets/images/AddAccount.png",
+                                        width: 28,
+                                        height: 28,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      'add_bank'.tr,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppTheme.primaryDarkBlue,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'withdraw_desc'.tr,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    });
   }
 
   void _showAddAccountSheet(
@@ -719,65 +1456,67 @@ class BankAccountsView extends StatelessWidget {
     final bankController = TextEditingController();
 
     Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
+      Material(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
         ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'add_bank'.tr,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: AppTheme.primaryDarkBlue,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'add_bank'.tr,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: AppTheme.primaryDarkBlue,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: holderController,
-                decoration: const InputDecoration(
-                  hintText: 'Account Holder Name',
+                const SizedBox(height: 16),
+                TextField(
+                  controller: holderController,
+                  decoration: const InputDecoration(
+                    hintText: 'Account Holder Name',
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: numberController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(hintText: 'Account Number'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: bankController,
-                decoration: const InputDecoration(hintText: 'Bank Name'),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  if (holderController.text.isNotEmpty &&
-                      numberController.text.isNotEmpty &&
-                      bankController.text.isNotEmpty) {
-                    controller.addBankAccount(
-                      holderController.text,
-                      numberController.text,
-                      bankController.text,
-                    );
-                  }
-                },
-                child: const Text('Add Account'),
-              ),
-            ],
+                const SizedBox(height: 12),
+                TextField(
+                  controller: numberController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(hintText: 'Account Number'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: bankController,
+                  decoration: const InputDecoration(hintText: 'Bank Name'),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () {
+                    if (holderController.text.isNotEmpty &&
+                        numberController.text.isNotEmpty &&
+                        bankController.text.isNotEmpty) {
+                      controller.addBankAccount(
+                        holderController.text,
+                        numberController.text,
+                        bankController.text,
+                      );
+                    }
+                  },
+                  child: const Text('Add Account'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
     );
   }
 }
@@ -792,16 +1531,23 @@ class PolicyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizationController = Get.find<LocalizationController>();
+    final Widget view;
     if (policyType == 'privacy') {
-      return _buildPrivacyPolicy(context);
+      view = _buildPrivacyPolicy(context);
+    } else if (policyType == 'terms') {
+      view = _buildTermsAndConditions(context);
+    } else if (policyType == 'fraud') {
+      view = _buildAntiFraudPolicy(context);
+    } else {
+      view = _buildUnder18Policy(context);
     }
-    if (policyType == 'terms') {
-      return _buildTermsAndConditions(context);
-    }
-    if (policyType == 'fraud') {
-      return _buildAntiFraudPolicy(context);
-    }
-    return _buildUnder18Policy(context);
+
+    return Obx(() {
+      final textDirection = localizationController.textDirection;
+
+      return Directionality(textDirection: textDirection, child: view);
+    });
   }
 
   Widget _buildPrivacyPolicy(BuildContext context) {
@@ -2198,100 +2944,105 @@ class HelpCenterView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFE8EDF9), Color(0xFFF6F8FC)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Custom Header Row matching screen exactly
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 12.0,
-                ),
-                height: 62,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: GestureDetector(
-                        onTap: () => Get.back(),
-                        child: Container(
-                          height: 38,
-                          width: 38,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: const Color(0xFFE2E8F0),
-                              width: 1,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
+    final localizationController = Get.find<LocalizationController>();
+
+    return Obx(() {
+      final textDirection = localizationController.textDirection;
+
+      return Directionality(
+        textDirection: textDirection,
+        child: Scaffold(
+          backgroundColor: Colors.white,
+          body: Container(
+            decoration: const BoxDecoration(
+              gradient: AppTheme.pageBackgroundGradient,
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  // Custom Header Row matching screen exactly
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 12.0,
+                    ),
+                    height: 62,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: GestureDetector(
+                            onTap: () => Get.back(),
+                            child: Container(
+                              height: 38,
+                              width: 38,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: const Color(0xFFE2E8F0),
+                                  width: 1,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.03),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.chevron_left_rounded,
-                            color: Color(0xFF0F172A),
-                            size: 24,
+                              child: const Icon(
+                                Icons.chevron_left_rounded,
+                                color: Color(0xFF0F172A),
+                                size: 24,
+                              ),
+                            ),
                           ),
                         ),
+                        const Text(
+                          'Help Center',
+                          style: TextStyle(
+                            color: Color(0xFF0F172A),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                      child: Column(
+                        children: [
+                          // WhatsApp Card
+                          _buildWhatsAppCard(),
+                          const SizedBox(height: 16),
+
+                          // Email Support Card
+                          _buildEmailCard(),
+                          const SizedBox(height: 16),
+
+                          // Support Info Card
+                          _buildSupportInfoCard(),
+                          const SizedBox(height: 16),
+                        ],
                       ),
                     ),
-                    const Text(
-                      'Help Center',
-                      style: TextStyle(
-                        color: Color(0xFF0F172A),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16,
                   ),
-                  child: Column(
-                    children: [
-                      // WhatsApp Card
-                      _buildWhatsAppCard(),
-                      const SizedBox(height: 16),
-
-                      // Email Support Card
-                      _buildEmailCard(),
-                      const SizedBox(height: 16),
-
-                      // Support Info Card
-                      _buildSupportInfoCard(),
-                      const SizedBox(height: 16),
-                    ],
-                  ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildWhatsAppCard() {

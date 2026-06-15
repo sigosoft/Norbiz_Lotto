@@ -60,6 +60,17 @@ class AppTheme {
     end: Alignment.bottomCenter,
   );
 
+  static const Gradient pageBackgroundGradient = LinearGradient(
+    colors: [
+      Color(0xFFCBDCF3),
+      Color(0xFFD5E4F9),
+      Colors.white,
+    ],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    stops: [0.0, 0.35, 0.45],
+  );
+
   static ThemeData get lightTheme {
     return ThemeData(
       primaryColor: primaryOrange,

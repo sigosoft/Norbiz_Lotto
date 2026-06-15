@@ -22,15 +22,7 @@ class TchalaView extends StatelessWidget {
           backgroundColor: Colors.white,
           body: Container(
             decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFFE2E8F0), // Soft light grayish-blue at the top
-                  Colors.white,
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: [0.0, 0.35],
-              ),
+              gradient: AppTheme.pageBackgroundGradient,
             ),
             child: SafeArea(
               child: Column(

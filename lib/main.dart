@@ -6,6 +6,7 @@ import 'controllers/localization_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/home_controller.dart';
 import 'controllers/cart_controller.dart';
+import 'controllers/game_controller.dart';
 import 'views/splash_view.dart';
 
 void main() {
@@ -16,6 +17,7 @@ void main() {
   Get.put(AuthController(), permanent: true);
   Get.put(HomeController(), permanent: true);
   Get.put(CartController(), permanent: true);
+  Get.put(GameController(), permanent: true);
 
   runApp(const MyApp());
 }

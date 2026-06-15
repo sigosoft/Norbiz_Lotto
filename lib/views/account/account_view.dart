@@ -152,11 +152,12 @@ class AccountView extends StatelessWidget {
             top: 0,
             right: 0,
             child: Opacity(
-              opacity: 0.04,
-              child: const Icon(
-                Icons.account_balance_wallet_rounded,
-                color: Color(0xFF002C8B),
-                size: 64,
+              opacity: 0.1,
+              child: Image.asset(
+                "lib/assets/images/Available.png",
+                width: 34,
+                height: 34,
+                color: const Color.fromARGB(255, 32, 31, 31),
               ),
             ),
           ),
@@ -212,19 +213,24 @@ class AccountView extends StatelessWidget {
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
-                              Icons.account_balance_wallet_rounded,
-                              size: 16,
-                              color: Colors.white,
+                            Image.asset(
+                              "lib/assets/images/Deposit.png",
+                              width: 20,
+                              height: 20,
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              'deposit'.tr,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                            Flexible(
+                              child: Text(
+                                'deposit'.tr,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ],
@@ -260,19 +266,24 @@ class AccountView extends StatelessWidget {
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
-                              Icons.outbox_rounded,
-                              size: 16,
-                              color: Colors.white,
+                            Image.asset(
+                              "lib/assets/images/Withdraw.png",
+                              width: 20,
+                              height: 20,
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              'withdraw'.tr,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                            Flexible(
+                              child: Text(
+                                'withdraw'.tr,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ],
@@ -302,8 +313,8 @@ class AccountView extends StatelessWidget {
           () => homeController.changeNavIndex(2),
         ),
         _buildShortcutItem(
-          const Icon(
-            Icons.published_with_changes_rounded,
+          const ImageIcon(
+            AssetImage('lib/assets/images/transactions.png'),
             color: Color(0xFFFE9900),
             size: 20,
           ),
@@ -311,8 +322,8 @@ class AccountView extends StatelessWidget {
           () => Get.to(() => const TransactionsView()),
         ),
         _buildShortcutItem(
-          const Icon(
-            Icons.account_balance_rounded,
+          const ImageIcon(
+            AssetImage('lib/assets/images/bank accounts.png'),
             color: Color(0xFFFE9900),
             size: 20,
           ),
@@ -380,31 +391,23 @@ class AccountView extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 8),
           width: 36,
           height: 36,
-          decoration: const BoxDecoration(
-            color: Color(0xFF1877F2),
-            shape: BoxShape.circle,
-          ),
           alignment: Alignment.center,
-          child: const Icon(Icons.facebook, color: Colors.white, size: 24),
+          child: Image.asset(
+            "lib/assets/images/Facebook.png",
+            width: 35,
+            height: 35,
+          ),
         ),
         // Instagram
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 8),
-          width: 36,
-          height: 36,
-          decoration: const BoxDecoration(
-            gradient: RadialGradient(
-              colors: [Color(0xFFFFDD55), Color(0xFFFF543F), Color(0xFFC837AB)],
-              center: Alignment.bottomLeft,
-              radius: 1.2,
-            ),
-            shape: BoxShape.circle,
-          ),
+          width: 39,
+          height: 39,
           alignment: Alignment.center,
-          child: const Icon(
-            Icons.camera_alt_outlined,
-            color: Colors.white,
-            size: 18,
+          child: Image.asset(
+            "lib/assets/images/Instagram.png",
+            width: 39,
+            height: 39,
           ),
         ),
         // LinkedIn
@@ -412,19 +415,11 @@ class AccountView extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 8),
           width: 36,
           height: 36,
-          decoration: const BoxDecoration(
-            color: Color(0xFF0077B5),
-            shape: BoxShape.circle,
-          ),
           alignment: Alignment.center,
-          child: const Text(
-            'in',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              fontStyle: FontStyle.italic,
-            ),
+          child: Image.asset(
+            "lib/assets/images/LinkedIn.png",
+            width: 35,
+            height: 35,
           ),
         ),
         // Twitter/X
@@ -432,18 +427,11 @@ class AccountView extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 8),
           width: 36,
           height: 36,
-          decoration: const BoxDecoration(
-            color: Colors.black,
-            shape: BoxShape.circle,
-          ),
           alignment: Alignment.center,
-          child: const Text(
-            'X',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-            ),
+          child: Image.asset(
+            "lib/assets/images/Twitter.png",
+            width: 32,
+            height: 32,
           ),
         ),
         // YouTube
@@ -451,15 +439,11 @@ class AccountView extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 8),
           width: 36,
           height: 36,
-          decoration: const BoxDecoration(
-            color: Color(0xFFFF0000),
-            shape: BoxShape.circle,
-          ),
           alignment: Alignment.center,
-          child: const Icon(
-            Icons.play_arrow_rounded,
-            color: Colors.white,
-            size: 22,
+          child: Image.asset(
+            "lib/assets/images/YouTube.png",
+            width: 36,
+            height: 36,
           ),
         ),
       ],
@@ -508,119 +492,135 @@ class AccountView extends StatelessWidget {
       return Directionality(
         textDirection: textDirection,
         child: Scaffold(
-          backgroundColor: const Color(0xFFEFF3FD),
-          body: SafeArea(
-            child: Column(
-              children: [
-                customHeaderRow,
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        profileHeader,
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Column(
-                            children: [
-                              const SizedBox(height: 16),
-                              walletCard,
-                              const SizedBox(height: 20),
-                              shortcutButtons,
-                              const SizedBox(height: 24),
+          backgroundColor: Colors.white,
+          body: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: AppTheme.pageBackgroundGradient,
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  customHeaderRow,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          profileHeader,
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                            ),
+                            child: Column(
+                              children: [
+                                const SizedBox(height: 16),
+                                walletCard,
+                                const SizedBox(height: 20),
+                                shortcutButtons,
+                                const SizedBox(height: 24),
 
-                              // Menu items list directly on background
-                              Column(
-                                children: [
-                                  _buildMenuItem(
-                                    leading: const Icon(
-                                      Icons.person_rounded,
-                                      color: Color(0xFF64748B),
-                                      size: 24,
+                                // Menu items list directly on background
+                                Column(
+                                  children: [
+                                    _buildMenuItem(
+                                      leading: Image.asset(
+                                        "lib/assets/images/AccountInfo.png",
+                                        width: 24,
+                                        height: 24,
+                                      ),
+                                      title: 'account_info'.tr,
+                                      onTap: () =>
+                                          Get.to(() => const AccountInfoView()),
                                     ),
-                                    title: 'account_info'.tr,
-                                    onTap: () =>
-                                        Get.to(() => const AccountInfoView()),
-                                  ),
-                                  _buildMenuItem(
-                                    leading: const Icon(
-                                      Icons.forum_outlined,
-                                      color: Color(0xFF64748B),
-                                      size: 22,
-                                    ),
-                                    title: 'language'.tr,
-                                    onTap: () => _showLanguageSelector(
-                                      context,
-                                      localizationController,
-                                    ),
-                                  ),
-                                  _buildMenuItem(
-                                    leading: const Icon(
-                                      Icons.verified_user_rounded,
-                                      color: Color(0xFF64748B),
-                                      size: 22,
-                                    ),
-                                    title: 'privacy_policy'.tr,
-                                    onTap: () => Get.to(
-                                      () => const PolicyView(
-                                        policyType: 'privacy',
+                                    _buildMenuItem(
+                                      leading: Image.asset(
+                                        "lib/assets/images/Languages.png",
+                                        width: 24,
+                                        height: 24,
+                                      ),
+                                      title: 'language'.tr,
+                                      onTap: () => _showLanguageSelector(
+                                        context,
+                                        localizationController,
                                       ),
                                     ),
-                                  ),
-                                  _buildMenuItem(
-                                    leading: const Icon(
-                                      Icons.article_rounded,
-                                      color: Color(0xFF64748B),
-                                      size: 22,
+                                    _buildMenuItem(
+                                      leading: Image.asset(
+                                        "lib/assets/images/PrivacyPolicy.png",
+                                        width: 24,
+                                        height: 24,
+                                      ),
+                                      title: 'privacy_policy'.tr,
+                                      onTap: () => Get.to(
+                                        () => const PolicyView(
+                                          policyType: 'privacy',
+                                        ),
+                                      ),
                                     ),
-                                    title: 'terms_conditions'.tr,
-                                    onTap: () => Get.to(
-                                      () =>
-                                          const PolicyView(policyType: 'terms'),
+                                    _buildMenuItem(
+                                      leading: Image.asset(
+                                        "lib/assets/images/Terms&Conditions.png",
+                                        width: 24,
+                                        height: 24,
+                                      ),
+                                      title: 'terms_conditions'.tr,
+                                      onTap: () => Get.to(
+                                        () => const PolicyView(
+                                          policyType: 'terms',
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                  _buildMenuItem(
-                                    leading: const Icon(
-                                      Icons.gpp_maybe_rounded,
-                                      color: Color(0xFF64748B),
-                                      size: 22,
+                                    _buildMenuItem(
+                                      leading: Image.asset(
+                                        "lib/assets/images/AntiFraud.png",
+                                        width: 24,
+                                        height: 24,
+                                      ),
+                                      title: 'anti_fraud'.tr,
+                                      onTap: () => Get.to(
+                                        () => const PolicyView(
+                                          policyType: 'fraud',
+                                        ),
+                                      ),
                                     ),
-                                    title: 'anti_fraud'.tr,
-                                    onTap: () => Get.to(
-                                      () =>
-                                          const PolicyView(policyType: 'fraud'),
+                                    _buildMenuItem(
+                                      leading: Image.asset(
+                                        "lib/assets/images/Under-18.png",
+                                        width: 24,
+                                        height: 24,
+                                      ),
+                                      title: 'under_18'.tr,
+                                      onTap: () => Get.to(
+                                        () =>
+                                            const PolicyView(policyType: 'age'),
+                                      ),
                                     ),
-                                  ),
-                                  _buildMenuItem(
-                                    leading: custom18Logo,
-                                    title: 'under_18'.tr,
-                                    onTap: () => Get.to(
-                                      () => const PolicyView(policyType: 'age'),
+                                    _buildMenuItem(
+                                      leading: Image.asset(
+                                        "lib/assets/images/HelpCenter.png",
+                                        width: 24,
+                                        height: 24,
+                                      ),
+                                      title: 'help_center'.tr,
+                                      onTap: () =>
+                                          Get.to(() => const HelpCenterView()),
                                     ),
-                                  ),
-                                  _buildMenuItem(
-                                    leading: const Icon(
-                                      Icons.help_outline_rounded,
-                                      color: Color(0xFF64748B),
-                                      size: 22,
-                                    ),
-                                    title: 'help_center'.tr,
-                                    onTap: () =>
-                                        Get.to(() => const HelpCenterView()),
-                                  ),
-                                ],
-                              ),
+                                  ],
+                                ),
 
-                              logoutButton,
-                              socialMediaRow,
-                              versionFooter,
-                            ],
+                                logoutButton,
+                                socialMediaRow,
+                                versionFooter,
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -761,124 +761,124 @@ class AccountView extends StatelessWidget {
 
   void _showLogoutBottomSheet(BuildContext context) {
     Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
+      Material(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header with Close Button
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                const Text(
-                  'Logout',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 22,
-                    color: Color(0xFF0F172A),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header with Close Button
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  const Text(
+                    'Logout',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 22,
+                      color: Color(0xFF0F172A),
+                    ),
                   ),
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: GestureDetector(
-                    onTap: () => Get.back(),
-                    child: Container(
-                      height: 36,
-                      width: 36,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: const Color(0xFFE2E8F0),
-                          width: 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.03),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      onTap: () => Get.back(),
+                      child: Container(
+                        height: 36,
+                        width: 36,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(0xFFE2E8F0),
+                            width: 1,
                           ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.close_rounded,
-                        color: Color(0xFF64748B),
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Subtitle
-            const Text(
-              'Are you sure you want to logout?',
-              style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            // Action Buttons Row
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: () => Get.back(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFF7ED),
-                        foregroundColor: const Color(0xFFFE9900),
-                        shape: const StadiumBorder(),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'No',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.close_rounded,
+                          color: Color(0xFF64748B),
+                          size: 20,
                         ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Get.back();
-                        Get.offAll(() => const SignInView());
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFE9900),
-                        foregroundColor: Colors.white,
-                        shape: const StadiumBorder(),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'Logout',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Subtitle
+              const Text(
+                'Are you sure you want to logout?',
+                style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              // Action Buttons Row
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () => Get.back(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFFF7ED),
+                          foregroundColor: const Color(0xFFFE9900),
+                          shape: const StadiumBorder(),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'No',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-          ],
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Get.back();
+                          Get.offAll(() => const SignInView());
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFE9900),
+                          foregroundColor: Colors.white,
+                          shape: const StadiumBorder(),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Logout',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
       isScrollControlled: true,
@@ -891,59 +891,59 @@ class AccountView extends StatelessWidget {
     LocalizationController locController,
   ) {
     Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
+      Material(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'language'.tr,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: AppTheme.primaryDarkBlue,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'language'.tr,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: AppTheme.primaryDarkBlue,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              title: const Text('English'),
-              trailing: locController.currentLanguage.value == 'en'
-                  ? const Icon(Icons.check, color: AppTheme.primaryOrange)
-                  : null,
-              onTap: () {
-                locController.changeLanguage('en');
-                Get.back();
-              },
-            ),
-            ListTile(
-              title: const Text('Français'),
-              trailing: locController.currentLanguage.value == 'fr'
-                  ? const Icon(Icons.check, color: AppTheme.primaryOrange)
-                  : null,
-              onTap: () {
-                locController.changeLanguage('fr');
-                Get.back();
-              },
-            ),
-            ListTile(
-              title: const Text('Kreyòl Ayisyen'),
-              trailing: locController.currentLanguage.value == 'ht'
-                  ? const Icon(Icons.check, color: AppTheme.primaryOrange)
-                  : null,
-              onTap: () {
-                locController.changeLanguage('ht');
-                Get.back();
-              },
-            ),
-          ],
+              const SizedBox(height: 16),
+              ListTile(
+                title: const Text('English'),
+                trailing: locController.currentLanguage.value == 'en'
+                    ? const Icon(Icons.check, color: AppTheme.primaryOrange)
+                    : null,
+                onTap: () {
+                  locController.changeLanguage('en');
+                  Get.back();
+                },
+              ),
+              ListTile(
+                title: const Text('Français'),
+                trailing: locController.currentLanguage.value == 'fr'
+                    ? const Icon(Icons.check, color: AppTheme.primaryOrange)
+                    : null,
+                onTap: () {
+                  locController.changeLanguage('fr');
+                  Get.back();
+                },
+              ),
+              ListTile(
+                title: const Text('Kreyòl Ayisyen'),
+                trailing: locController.currentLanguage.value == 'ht'
+                    ? const Icon(Icons.check, color: AppTheme.primaryOrange)
+                    : null,
+                onTap: () {
+                  locController.changeLanguage('ht');
+                  Get.back();
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -20,7 +20,7 @@ class ResultsController extends GetxController {
   var selectedDate = DateTime(2026, 3, 11).obs; // Matches March 11, 2026 in Figma
   var searchQuery = ''.obs;
 
-  var stateTabs = ['Florida', 'New York', 'Georgia', 'Texas'];
+  var stateTabs = ['Florida', 'New York', 'Georgia', 'Texas seals'];
 
   String get formattedSelectedDate => DateFormat('MMM dd, yyyy').format(selectedDate.value);
 
@@ -59,6 +59,30 @@ class ResultsController extends GetxController {
         gameType: 'Lotto 5',
         drawNumbers: ['4', '7', '2', '8', '3', '1', '6'],
         winningNumbers: ['472', '83', '16'],
+      ),
+      DrawResultItem(
+        title: 'FL Midday',
+        gameType: 'Borlette',
+        drawNumbers: ['1', '3', '4', '5', '0', '8', '9'],
+        winningNumbers: ['13', '45', '08'],
+      ),
+      DrawResultItem(
+        title: 'FL Midday',
+        gameType: 'Lotto 3',
+        drawNumbers: ['1', '3', '4', '5', '0', '8', '9'],
+        winningNumbers: ['1', '3', '4'],
+      ),
+      DrawResultItem(
+        title: 'FL Midday',
+        gameType: 'Lotto 4',
+        drawNumbers: ['1', '3', '4', '5', '0', '8', '9'],
+        winningNumbers: ['1', '3', '4', '5'],
+      ),
+      DrawResultItem(
+        title: 'FL Midday',
+        gameType: 'Lotto 5',
+        drawNumbers: ['1', '3', '4', '5', '0', '8', '9'],
+        winningNumbers: ['134', '50', '89'],
       ),
     ];
     resultsList.value = data;

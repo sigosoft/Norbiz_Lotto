@@ -5,6 +5,12 @@ import 'auth_controller.dart';
 class CartController extends GetxController {
   var cartTickets = <TicketModel>[].obs;
 
+  @override
+  void onInit() {
+    super.onInit();
+    addTicket('Borlette FL', '99', 10.0);
+  }
+
   double get subtotal =>
       cartTickets.fold(0.0, (sum, ticket) => sum + ticket.betAmount);
   double get serviceFee => cartTickets.isEmpty ? 0.0 : 1.00; // Flat fee

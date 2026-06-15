@@ -85,10 +85,12 @@ class BorletteView extends StatelessWidget {
                 color: Color(0xFF0D319C),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.question_mark_rounded,
-                color: Colors.white,
-                size: 16,
+              alignment: Alignment.center,
+              child: Image.asset(
+                "lib/assets/images/Question.png",
+                width: 16,
+                height: 16,
+                fit: BoxFit.contain,
               ),
             ),
           ),
@@ -385,7 +387,7 @@ class BorletteView extends StatelessWidget {
 
               return Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
+                  horizontal: 75,
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
@@ -416,7 +418,7 @@ class BorletteView extends StatelessWidget {
                           Text(
                             val,
                             style: TextStyle(
-                              fontSize: 24,
+                              fontSize: 22,
                               fontWeight: FontWeight.bold,
                               color: isFilled
                                   ? const Color(0xFF0D319C)
@@ -456,7 +458,7 @@ class BorletteView extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(24),
                       ),
-                      minimumSize: const Size(0, 44),
+                      minimumSize: const Size(0, 40),
                     ),
                     child: Text(
                       'clear_selection'.tr,
@@ -477,7 +479,7 @@ class BorletteView extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(24),
                       ),
-                      minimumSize: const Size(0, 44),
+                      minimumSize: const Size(0, 40),
                       elevation: 0,
                     ),
                     child: Text(
@@ -551,23 +553,96 @@ class BorletteView extends StatelessWidget {
                         fontSize: 14,
                       ),
                     ),
-                    Container(
-                      width: 36,
-                      height: 36,
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF0D319C),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        selected,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                    if (game.category == '2 C' || game.category == '2 combo')
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            alignment: Alignment.center,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF0D319C),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              selected.substring(0, 2),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8.0),
+                          Container(
+                            width: 36,
+                            height: 36,
+                            alignment: Alignment.center,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF0D319C),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              selected.substring(2, 4),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    else if (game.category == '3D' ||
+                        game.category == '4D' ||
+                        game.category == '5D')
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(
+                          selected.length,
+                          (index) => Padding(
+                            padding: EdgeInsets.only(
+                              left: index == 0 ? 0.0 : 8.0,
+                            ),
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              alignment: Alignment.center,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF0D319C),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                selected[index],
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        width: 36,
+                        height: 36,
+                        alignment: Alignment.center,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF0D319C),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          selected,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -665,7 +740,7 @@ class BorletteView extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
-                    minimumSize: const Size(0, 48),
+                    minimumSize: const Size(0, 40),
                   ),
                   child: Text(
                     'add_to_cart'.tr,
@@ -685,6 +760,7 @@ class BorletteView extends StatelessWidget {
                       cartController.addTicket(game.name, selected, amount);
                       final ticketId = cartController.cartTickets.first.id;
 
+                      final totalAmount = cartController.total;
                       // Execute checkout
                       if (cartController.checkout()) {
                         Get.to(
@@ -692,7 +768,7 @@ class BorletteView extends StatelessWidget {
                             ticketId: ticketId,
                             gameName: game.name,
                             betNumber: selected,
-                            amount: amount,
+                            amount: totalAmount,
                           ),
                         );
                         cartController.clearCart();
@@ -706,7 +782,7 @@ class BorletteView extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
-                    minimumSize: const Size(0, 48),
+                    minimumSize: const Size(0, 40),
                     elevation: 0,
                   ),
                   child: Text(
@@ -878,12 +954,7 @@ class BorletteView extends StatelessWidget {
             backgroundColor: Colors.white,
             body: Container(
               decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFFEFF3FD), Colors.white],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  stops: [0.0, 0.3],
-                ),
+                gradient: AppTheme.pageBackgroundGradient,
               ),
               child: SafeArea(
                 child: Column(
@@ -991,18 +1062,7 @@ class BorletteView extends StatelessWidget {
                   Container(
                     width: 56,
                     height: 56,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppTheme.primaryOrange,
-                        width: 3.5,
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.check,
-                      color: AppTheme.primaryOrange,
-                      size: 36,
-                    ),
+                    child: Image.asset("lib/assets/images/tick.png"),
                   ),
                   const SizedBox(height: 20),
                   Text(
@@ -1034,7 +1094,7 @@ class BorletteView extends StatelessWidget {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(24),
                             ),
-                            minimumSize: const Size(0, 44),
+                            minimumSize: const Size(0, 40),
                           ),
                           child: Text('play_more'.tr),
                         ),
@@ -1053,7 +1113,7 @@ class BorletteView extends StatelessWidget {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(24),
                             ),
-                            minimumSize: const Size(0, 44),
+                            minimumSize: const Size(0, 40),
                             elevation: 0,
                           ),
                           child: Text('view_cart'.tr),

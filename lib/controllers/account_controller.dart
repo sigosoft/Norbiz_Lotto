@@ -10,7 +10,7 @@ class AccountController extends GetxController {
   var savedAccounts = <BankAccountModel>[].obs;
 
   // Transactions
-  var activeTxFilter = 'All'.obs; // 'All', 'Deposits', 'Withdrawls'
+  var activeTxFilter = 'All'.obs; // 'All', 'Deposits', 'Withdrawals'
   var allTransactions = <TransactionModel>[].obs;
   var filteredTransactions = <TransactionModel>[].obs;
 
@@ -37,7 +37,7 @@ class AccountController extends GetxController {
         id: 'tx1',
         type: TransactionType.deposit,
         title: 'Bank Deposit',
-        date: 'MAR 11, 2026 • 2:00 PM',
+        date: 'MAR 11, 2024 • 2:00 PM',
         amount: 200.0,
         status: TransactionStatus.completed,
       ),
@@ -45,16 +45,16 @@ class AccountController extends GetxController {
         id: 'tx2',
         type: TransactionType.withdrawal,
         title: 'Withdraw to Bank',
-        date: 'MAR 11, 2026 • 2:00 PM',
-        amount: 150.0,
+        date: 'MAR 11, 2024 • 2:00 PM',
+        amount: 183.0,
         status: TransactionStatus.completed,
       ),
       TransactionModel(
         id: 'tx3',
         type: TransactionType.withdrawal,
         title: 'Withdraw to Bank',
-        date: 'MAR 11, 2026 • 2:00 PM',
-        amount: 150.0,
+        date: 'MAR 11, 2024 • 2:00 PM',
+        amount: 160.0,
         status: TransactionStatus.processing,
       ),
     ];
@@ -94,7 +94,7 @@ class AccountController extends GetxController {
       filteredTransactions.value = allTransactions
           .where((tx) => tx.type == TransactionType.deposit)
           .toList();
-    } else if (activeTxFilter.value == 'Withdrawls') {
+    } else if (activeTxFilter.value == 'Withdrawals') {
       filteredTransactions.value = allTransactions
           .where((tx) => tx.type == TransactionType.withdrawal)
           .toList();
