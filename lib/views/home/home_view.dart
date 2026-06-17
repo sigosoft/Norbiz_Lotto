@@ -10,6 +10,7 @@ import '../../controllers/localization_controller.dart';
 import '../../controllers/cart_controller.dart';
 import '../game/borlette_view.dart';
 import '../cart/cart_view.dart';
+import '../notifications_view.dart';
 
 class HomeView extends StatelessWidget {
   const HomeView({Key? key}) : super(key: key);
@@ -43,7 +44,7 @@ class HomeView extends StatelessWidget {
                   size: 26,
                 ),
                 onPressed: () {
-                  showToast('no_notifications'.tr, title: 'Notifications');
+                  Get.to(() => const NotificationsView());
                 },
               ),
               const SizedBox(width: 4),
@@ -207,7 +208,8 @@ class HomeView extends StatelessWidget {
                                     return Padding(
                                       padding: EdgeInsets.only(
                                         right:
-                                            index == homeController.games.length - 1
+                                            index ==
+                                                homeController.games.length - 1
                                             ? 0.0
                                             : 12.0,
                                       ),
@@ -325,10 +327,13 @@ class HomeView extends StatelessWidget {
 
                           // Game Play Section Title & Agent Play Cards List
                           Obx(() {
-                            final selectedGame = homeController.games.firstWhere(
-                              (g) => g.id == homeController.selectedGameId.value,
-                              orElse: () => homeController.games.first,
-                            );
+                            final selectedGame = homeController.games
+                                .firstWhere(
+                                  (g) =>
+                                      g.id ==
+                                      homeController.selectedGameId.value,
+                                  orElse: () => homeController.games.first,
+                                );
 
                             final String gameTitle =
                                 selectedGame.id == 'borlette_2d'
@@ -358,7 +363,9 @@ class HomeView extends StatelessWidget {
                                   ),
                                   hasBorder: false,
                                   onTap: () {
-                                    Get.to(() => BorletteView(game: selectedGame));
+                                    Get.to(
+                                      () => BorletteView(game: selectedGame),
+                                    );
                                   },
                                 ),
                                 _buildAgentPlayCard(
@@ -372,7 +379,9 @@ class HomeView extends StatelessWidget {
                                   ),
                                   hasBorder: false,
                                   onTap: () {
-                                    Get.to(() => BorletteView(game: selectedGame));
+                                    Get.to(
+                                      () => BorletteView(game: selectedGame),
+                                    );
                                   },
                                 ),
                                 _buildAgentPlayCard(
@@ -386,7 +395,9 @@ class HomeView extends StatelessWidget {
                                   ),
                                   hasBorder: false,
                                   onTap: () {
-                                    Get.to(() => BorletteView(game: selectedGame));
+                                    Get.to(
+                                      () => BorletteView(game: selectedGame),
+                                    );
                                   },
                                 ),
                               ],

@@ -585,7 +585,7 @@ class EditAccountInfoView extends StatelessWidget {
     );
     final passwordController = TextEditingController(text: '123456789');
     var genderVal = authController.userGender.value.obs;
-    var obscurePassword = true.obs;
+    var obscurePassword = false.obs;
 
     return Obx(() {
       final textDirection = localizationController.textDirection;
@@ -775,7 +775,7 @@ class EditAccountInfoView extends StatelessWidget {
                           const SizedBox(height: 32),
                           SizedBox(
                             width: double.infinity,
-                            height: 40,
+                            height: 48,
                             child: ElevatedButton(
                               onPressed: () {
                                 authController.updateProfile(
@@ -1384,10 +1384,8 @@ class BankAccountsView extends StatelessWidget {
 
                           // Add another account container with dashed border
                           GestureDetector(
-                            onTap: () => _showAddAccountSheet(
-                              context,
-                              accountController,
-                            ),
+                            onTap: () =>
+                                Get.to(() => const AddBankAccountView()),
                             child: DashedBorderContainer(
                               borderRadius: 16,
                               color: const Color(0xFFCBD5E1),
@@ -1517,6 +1515,253 @@ class BankAccountsView extends StatelessWidget {
       ),
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+    );
+  }
+}
+
+// ------------------------------------------------------------
+// 3b. Add Bank Account View
+// ------------------------------------------------------------
+class AddBankAccountView extends StatelessWidget {
+  const AddBankAccountView({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final accountController = Get.find<AccountController>();
+    final localizationController = Get.find<LocalizationController>();
+
+    final bankNameController = TextEditingController();
+    final holderNameController = TextEditingController();
+    final accountNumberController = TextEditingController();
+    final confirmAccountNumberController = TextEditingController();
+    final swiftController = TextEditingController();
+    final currencyController = TextEditingController(text: 'USD');
+
+    final customHeaderRow = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          GestureDetector(
+            onTap: () => Get.back(),
+            child: Container(
+              height: 38,
+              width: 38,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.chevron_left_rounded,
+                color: Color(0xFF0F172A),
+                size: 24,
+              ),
+            ),
+          ),
+          const Text(
+            'Add Bank Account',
+            style: TextStyle(
+              color: Color(0xFF0F172A),
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(width: 38), // Spacer of same width to center the title
+        ],
+      ),
+    );
+
+    return Obx(() {
+      final textDirection = localizationController.textDirection;
+
+      return Directionality(
+        textDirection: textDirection,
+        child: Scaffold(
+          backgroundColor: const Color(0xFFEFF3FD),
+          body: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: AppTheme.pageBackgroundGradient,
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  customHeaderRow,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildTextField(
+                            label: 'Bank Name',
+                            controller: bankNameController,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            label: 'Account Holder Name',
+                            controller: holderNameController,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            label: 'Account Number',
+                            controller: accountNumberController,
+                            keyboardType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            label: 'Confirm Account Number',
+                            controller: confirmAccountNumberController,
+                            keyboardType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            label: 'SWIFT / BIC Code',
+                            controller: swiftController,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            label: 'Currency',
+                            controller: currencyController,
+                            readOnly: true,
+                          ),
+                          const SizedBox(height: 32),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                if (bankNameController.text.isEmpty) {
+                                  showToast(
+                                    'Please enter Bank Name'.tr,
+                                    title: 'Error',
+                                  );
+                                  return;
+                                }
+                                if (holderNameController.text.isEmpty) {
+                                  showToast(
+                                    'Please enter Account Holder Name'.tr,
+                                    title: 'Error',
+                                  );
+                                  return;
+                                }
+                                if (accountNumberController.text.isEmpty) {
+                                  showToast(
+                                    'Please enter Account Number'.tr,
+                                    title: 'Error',
+                                  );
+                                  return;
+                                }
+                                if (accountNumberController.text !=
+                                    confirmAccountNumberController.text) {
+                                  showToast(
+                                    'Account Numbers do not match'.tr,
+                                    title: 'Error',
+                                  );
+                                  return;
+                                }
+
+                                accountController.addBankAccount(
+                                  holderNameController.text,
+                                  accountNumberController.text,
+                                  bankNameController.text,
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFE9900),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Text(
+                                'Save',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildTextField({
+    required String label,
+    required TextEditingController controller,
+    bool obscureText = false,
+    Widget? suffixIcon,
+    TextInputType keyboardType = TextInputType.text,
+    bool readOnly = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF94A3B8),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          obscureText: obscureText,
+          keyboardType: keyboardType,
+          readOnly: readOnly,
+          style: const TextStyle(
+            color: Color(0xFF0F172A),
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+          decoration: InputDecoration(
+            fillColor: Colors.white,
+            filled: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFFE2E8F0),
+                width: 1.0,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFFFE9900),
+                width: 1.5,
+              ),
+            ),
+            suffixIcon: suffixIcon,
+          ),
+        ),
+      ],
     );
   }
 }

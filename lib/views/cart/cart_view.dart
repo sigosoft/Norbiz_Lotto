@@ -136,45 +136,44 @@ class CartView extends StatelessWidget {
     final emptyWidget = Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(32),
-              decoration: const BoxDecoration(
-                color: Color(0xFFEFF2FD),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.shopping_cart_outlined,
-                color: Colors.grey,
-                size: 80,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Your Cart is Empty'.tr,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-                color: Color(0xFF002C8B),
-              ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () => Get.back(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryOrange,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Spacer(),
+                      Image.asset(
+                        'lib/assets/images/Cart Empty.png',
+                        width: 280,
+                        height: 280,
+                        fit: BoxFit.contain,
+                      ),
+                      const SizedBox(height: 32),
+                      ElevatedButton(
+                        onPressed: () => Get.back(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryOrange,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          minimumSize: const Size(180, 48),
+                          elevation: 0,
+                        ),
+                        child: Text('back_home'.tr),
+                      ),
+                      const Spacer(),
+                    ],
+                  ),
                 ),
-                minimumSize: const Size(180, 48),
-                elevation: 0,
               ),
-              child: Text('back_home'.tr),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );

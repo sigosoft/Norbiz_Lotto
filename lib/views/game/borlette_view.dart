@@ -513,7 +513,7 @@ class BorletteView extends StatelessWidget {
           ? 4
           : 4;
 
-      if (selected.length < requiredLen) return const SizedBox();
+      if (selected.length < requiredLen || !gameController.isQuickPicked.value) return const SizedBox();
 
       final textVal = gameController.enteredAmount.value;
       if (textVal != amountController.text) {

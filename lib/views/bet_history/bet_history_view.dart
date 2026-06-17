@@ -17,31 +17,30 @@ class BetHistoryView extends StatelessWidget {
     final emptyWidget = Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(32),
-              decoration: const BoxDecoration(
-                color: Color(0xFFEFF3FD),
-                shape: BoxShape.circle,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Spacer(),
+                      Image.asset(
+                        'lib/assets/images/No Bet History.png',
+                        width: 280,
+                        height: 280,
+                        fit: BoxFit.contain,
+                      ),
+                      const Spacer(),
+                    ],
+                  ),
+                ),
               ),
-              child: const Icon(
-                Icons.receipt_long_outlined,
-                color: Colors.grey,
-                size: 80,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'no_bet_history'.tr,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-                color: AppTheme.primaryDarkBlue,
-              ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );

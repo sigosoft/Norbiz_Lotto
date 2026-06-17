@@ -122,7 +122,7 @@ class AccountView extends StatelessWidget {
               ),
             ),
             GestureDetector(
-              onTap: () => Get.to(() => const AccountInfoView()),
+              onTap: () => Get.to(() => const EditAccountInfoView()),
               child: const Icon(Icons.edit, color: Colors.white, size: 22),
             ),
           ],

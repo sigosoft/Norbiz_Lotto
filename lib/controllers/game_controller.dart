@@ -11,6 +11,7 @@ class GameController extends GetxController {
   var selectedNumbers = ''.obs;
   var enteredAmount = ''.obs;
   var activeTarget = 'selection'.obs;
+  var isQuickPicked = false.obs;
 
   // Tchala list and search
   var tchalaList = <DreamModel>[].obs;
@@ -82,6 +83,7 @@ class GameController extends GetxController {
       maxLen = 4;
 
     if (activeTarget.value == 'selection') {
+      isQuickPicked.value = false;
       if (selectedNumbers.value.length < maxLen) {
         selectedNumbers.value += char;
       }
@@ -96,6 +98,7 @@ class GameController extends GetxController {
   }
 
   void pressBackspace() {
+    isQuickPicked.value = false;
     if (activeTarget.value == 'amount') {
       if (enteredAmount.value.isNotEmpty) {
         enteredAmount.value = enteredAmount.value.substring(
@@ -125,6 +128,7 @@ class GameController extends GetxController {
     selectedNumbers.value = '';
     enteredAmount.value = '';
     activeTarget.value = 'none';
+    isQuickPicked.value = false;
   }
 
   void performQuickPick() {
@@ -143,6 +147,7 @@ class GameController extends GetxController {
     }
     selectedNumbers.value = picks;
     activeTarget.value = 'none';
+    isQuickPicked.value = true;
   }
 
   // Validation
