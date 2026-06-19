@@ -46,6 +46,8 @@ class MyApp extends StatelessWidget {
         translations: AppTranslations(),
         locale: Locale(currentLanguage),
         fallbackLocale: const Locale('en', 'US'),
+        defaultTransition: Transition.cupertino,
+        transitionDuration: const Duration(milliseconds: 230),
         home: const SplashView(),
         builder: (context, child) {
           return Obx(() {
