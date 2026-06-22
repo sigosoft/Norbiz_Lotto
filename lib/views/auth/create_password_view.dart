@@ -106,60 +106,62 @@ class CreatePasswordView extends StatelessWidget {
                                 const SizedBox(height: 8),
 
                                 // New Password Input Box
-                                Container(
-                                  height: 45,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Colors.grey.shade300,
-                                      width: 1.0,
+                                Obx(
+                                  () => Container(
+                                    height: 45,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
                                     ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Center(
-                                          child: TextField(
-                                            controller: authController
-                                                .newPasswordController,
-                                            obscureText: !authController
-                                                .isNewPasswordVisible
-                                                .value,
-                                            style: const TextStyle(
-                                              color: AppTheme.textDark,
-                                              fontSize: 16,
-                                            ),
-                                            decoration: const InputDecoration(
-                                              filled: false,
-                                              isDense: true,
-                                              border: InputBorder.none,
-                                              enabledBorder: InputBorder.none,
-                                              focusedBorder: InputBorder.none,
-                                              contentPadding: EdgeInsets.zero,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: Colors.grey.shade300,
+                                        width: 1.0,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Center(
+                                            child: TextField(
+                                              controller: authController
+                                                  .newPasswordController,
+                                              obscureText: !authController
+                                                  .isNewPasswordVisible
+                                                  .value,
+                                              style: const TextStyle(
+                                                color: AppTheme.textDark,
+                                                fontSize: 16,
+                                              ),
+                                              decoration: const InputDecoration(
+                                                filled: false,
+                                                isDense: true,
+                                                border: InputBorder.none,
+                                                enabledBorder: InputBorder.none,
+                                                focusedBorder: InputBorder.none,
+                                                contentPadding: EdgeInsets.zero,
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                      IconButton(
-                                        icon: Icon(
-                                          authController
-                                                  .isNewPasswordVisible
-                                                  .value
-                                              ? Icons.visibility
-                                              : Icons.visibility_off,
-                                          color: Colors.grey,
-                                          size: 20,
+                                        IconButton(
+                                          icon: Icon(
+                                            authController
+                                                    .isNewPasswordVisible
+                                                    .value
+                                                ? Icons.visibility
+                                                : Icons.visibility_off,
+                                            color: Colors.grey,
+                                            size: 20,
+                                          ),
+                                          onPressed: () => authController
+                                              .toggleNewPasswordVisibility(),
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(),
                                         ),
-                                        onPressed: authController
-                                            .toggleNewPasswordVisibility,
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
 
@@ -177,60 +179,62 @@ class CreatePasswordView extends StatelessWidget {
                                 const SizedBox(height: 8),
 
                                 // Confirm Password Input Box
-                                Container(
-                                  height: 45,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Colors.grey.shade300,
-                                      width: 1.0,
+                                Obx(
+                                  () => Container(
+                                    height: 45,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
                                     ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Center(
-                                          child: TextField(
-                                            controller: authController
-                                                .newConfirmPasswordController,
-                                            obscureText: !authController
-                                                .isNewConfirmPasswordVisible
-                                                .value,
-                                            style: const TextStyle(
-                                              color: AppTheme.textDark,
-                                              fontSize: 16,
-                                            ),
-                                            decoration: const InputDecoration(
-                                              filled: false,
-                                              isDense: true,
-                                              border: InputBorder.none,
-                                              enabledBorder: InputBorder.none,
-                                              focusedBorder: InputBorder.none,
-                                              contentPadding: EdgeInsets.zero,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: Colors.grey.shade300,
+                                        width: 1.0,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Center(
+                                            child: TextField(
+                                              controller: authController
+                                                  .newConfirmPasswordController,
+                                              obscureText: !authController
+                                                  .isNewConfirmPasswordVisible
+                                                  .value,
+                                              style: const TextStyle(
+                                                color: AppTheme.textDark,
+                                                fontSize: 16,
+                                              ),
+                                              decoration: const InputDecoration(
+                                                filled: false,
+                                                isDense: true,
+                                                border: InputBorder.none,
+                                                enabledBorder: InputBorder.none,
+                                                focusedBorder: InputBorder.none,
+                                                contentPadding: EdgeInsets.zero,
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                      IconButton(
-                                        icon: Icon(
-                                          authController
-                                                  .isNewConfirmPasswordVisible
-                                                  .value
-                                              ? Icons.visibility
-                                              : Icons.visibility_off,
-                                          color: Colors.grey,
-                                          size: 20,
+                                        IconButton(
+                                          icon: Icon(
+                                            authController
+                                                    .isNewConfirmPasswordVisible
+                                                    .value
+                                                ? Icons.visibility
+                                                : Icons.visibility_off,
+                                            color: Colors.grey,
+                                            size: 20,
+                                          ),
+                                          onPressed: () => authController
+                                              .toggleNewConfirmPasswordVisibility(),
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(),
                                         ),
-                                        onPressed: authController
-                                            .toggleNewConfirmPasswordVisibility,
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ],
@@ -260,12 +264,16 @@ class CreatePasswordView extends StatelessWidget {
                                           bool success = await authController
                                               .confirmPasswordReset();
                                           if (success) {
-                                            showToast(
-                                              'Password reset successfully.'.tr,
-                                              title: 'Success',
-                                            );
                                             Get.offAll(
                                               () => const SignInView(),
+                                            );
+                                            Future.delayed(
+                                              const Duration(milliseconds: 300),
+                                              () => showToast(
+                                                'Password reset successfully.'
+                                                    .tr,
+                                                title: 'Success',
+                                              ),
                                             );
                                           }
                                         },

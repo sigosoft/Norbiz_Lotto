@@ -22,6 +22,15 @@ class BorletteView extends StatelessWidget {
     final localizationController = Get.find<LocalizationController>();
     final amountController = TextEditingController();
 
+    final String nextDraw = game.nextDrawTime ?? '2:00 PM (Afternoon)';
+    final bool hasLabelPrefix =
+        nextDraw.toLowerCase().contains('next draw') ||
+        nextDraw.toLowerCase().contains('prochain') ||
+        nextDraw.toLowerCase().contains('pwochen');
+    final String displayNextDraw = hasLabelPrefix
+        ? nextDraw
+        : 'Next Draw is $nextDraw';
+
     // Custom Header Row matching mockups
     final customHeaderRow = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -119,17 +128,17 @@ class BorletteView extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Agent Bon Chans',
-                  style: TextStyle(
+                Text(
+                  game.agentName ?? 'Agent Bon Chans',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
                   ),
                 ),
-                const Text(
-                  'Next Draw is 2:00 PM (Afternoon)',
-                  style: TextStyle(
+                Text(
+                  displayNextDraw,
+                  style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 10,
                     fontWeight: FontWeight.w500,
@@ -203,9 +212,9 @@ class BorletteView extends StatelessWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'FL Evening',
-                              style: TextStyle(
+                            Text(
+                              game.drawName ?? 'FL Evening',
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
@@ -513,7 +522,8 @@ class BorletteView extends StatelessWidget {
           ? 4
           : 4;
 
-      if (selected.length < requiredLen || !gameController.isQuickPicked.value) return const SizedBox();
+      if (selected.length < requiredLen || !gameController.isQuickPicked.value)
+        return const SizedBox();
 
       final textVal = gameController.enteredAmount.value;
       if (textVal != amountController.text) {

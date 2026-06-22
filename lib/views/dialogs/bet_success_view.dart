@@ -31,7 +31,7 @@ class BetSuccessView extends StatelessWidget {
       return betAmount * 4500;
     } else if (name.contains('5')) {
       return betAmount * 50000;
-    } else if (name.contains('maryaj')) {
+    } else if (name.contains('maryaj') || name.contains('marriage')) {
       return betAmount * 50000;
     }
     return betAmount * 60;

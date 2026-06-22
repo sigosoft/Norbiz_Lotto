@@ -111,34 +111,64 @@ class HomeView extends StatelessWidget {
     );
 
     // Jackpot Slider Banner
-    final bannerCarousel = Column(
-      children: [
-        SizedBox(
-          height: 140,
-          child: PageView.builder(
-            onPageChanged: (idx) =>
-                homeController.currentCarouselIndex.value = idx,
-            itemCount: 3,
-            itemBuilder: (context, index) {
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  image: const DecorationImage(
-                    image: AssetImage('lib/assets/images/caurosal slider.png'),
-                    fit: BoxFit.cover,
+    final bannerCarousel = Obx(() {
+      final list = homeController.banners;
+      final count = list.isEmpty ? 1 : list.length;
+      return Column(
+        children: [
+          SizedBox(
+            height: 140,
+            child: PageView.builder(
+              onPageChanged: (idx) =>
+                  homeController.currentCarouselIndex.value = idx,
+              itemCount: count,
+              itemBuilder: (context, index) {
+                if (list.isEmpty) {
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      image: const DecorationImage(
+                        image: AssetImage('lib/assets/images/caurosal slider.png'),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  );
+                }
+
+                final banner = list[index];
+                final String imagePath = banner['image'] ?? '';
+                final imageUrl = imagePath.startsWith('http')
+                    ? imagePath
+                    : 'https://ourworks.co.in/Norbiz-Lotto/public/$imagePath';
+
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                ),
-              );
-            },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Image.asset(
+                          'lib/assets/images/caurosal slider.png',
+                          fit: BoxFit.cover,
+                        );
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Obx(
-          () => Row(
+          const SizedBox(height: 8),
+          Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
-              3,
+              count,
               (index) => Container(
                 margin: const EdgeInsets.symmetric(horizontal: 4),
                 height: 8,
@@ -152,9 +182,9 @@ class HomeView extends StatelessWidget {
               ),
             ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
 
     return Obx(() {
       final textDirection = localizationController.textDirection;
@@ -170,244 +200,373 @@ class HomeView extends StatelessWidget {
               gradient: AppTheme.pageBackgroundGradient,
             ),
             child: SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    headerRow,
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          bannerCarousel,
-                          const SizedBox(height: 24),
+              child: Stack(
+                children: [
+                  SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        headerRow,
+                        const SizedBox(height: 20),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              bannerCarousel,
+                              const SizedBox(height: 24),
 
-                          Text(
-                            'choose_game'.tr,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1E293B),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Game Selection Category Cards
-                          Obx(
-                            () => SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              clipBehavior: Clip.none,
-                              child: Row(
-                                children: List.generate(
-                                  homeController.games.length,
-                                  (index) {
-                                    final game = homeController.games[index];
-                                    return Padding(
-                                      padding: EdgeInsets.only(
-                                        right:
-                                            index ==
-                                                homeController.games.length - 1
-                                            ? 0.0
-                                            : 12.0,
-                                      ),
-                                      child: SizedBox(
-                                        width: 106,
-                                        child: GameCard(game: game),
-                                      ),
-                                    );
-                                  },
+                              Text(
+                                'choose_game'.tr,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1E293B),
                                 ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
+                              const SizedBox(height: 12),
 
-                          // Search Bar
-                          Container(
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEFF2FD),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.search,
-                                  color: Color(0xFF94A3B8),
-                                  size: 22,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: TextField(
-                                    onChanged: homeController.filterGames,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: Color(0xFF1E293B),
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    decoration: InputDecoration(
-                                      hintText: 'search_placeholder'.tr,
-                                      hintStyle: const TextStyle(
-                                        color: Color(0xFF94A3B8),
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                      filled: false,
-                                      isDense: true,
-                                      border: InputBorder.none,
-                                      enabledBorder: InputBorder.none,
-                                      focusedBorder: InputBorder.none,
-                                      contentPadding: EdgeInsets.zero,
+                              // Game Selection Category Cards
+                              Obx(
+                                () => SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  clipBehavior: Clip.none,
+                                  child: Row(
+                                    children: List.generate(
+                                      homeController.games.length,
+                                      (index) {
+                                        final game = homeController.games[index];
+                                        return Padding(
+                                          padding: EdgeInsets.only(
+                                            right:
+                                                index ==
+                                                    homeController.games.length - 1
+                                                ? 0.0
+                                                : 12.0,
+                                          ),
+                                          child: SizedBox(
+                                            width: 106,
+                                            child: GameCard(game: game),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
+                              ),
+                              const SizedBox(height: 24),
 
-                          Container(
-                            height: 48,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFF5EA),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
+                              // Search Bar
+                              Container(
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEFF2FD),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Row(
                                   children: [
-                                    Icon(
-                                      Icons.dark_mode_rounded,
-                                      color: Color(0xFF2563EB),
-                                      size: 20,
+                                    const Icon(
+                                      Icons.search,
+                                      color: Color(0xFF94A3B8),
+                                      size: 22,
                                     ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'FL Evening',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF1E293B),
-                                        fontSize: 14,
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: TextField(
+                                        onChanged: homeController.filterGames,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Color(0xFF1E293B),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        decoration: InputDecoration(
+                                          hintText: 'search_placeholder'.tr,
+                                          hintStyle: const TextStyle(
+                                            color: Color(0xFF94A3B8),
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                          filled: false,
+                                          isDense: true,
+                                          border: InputBorder.none,
+                                          enabledBorder: InputBorder.none,
+                                          focusedBorder: InputBorder.none,
+                                          contentPadding: EdgeInsets.zero,
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ),
-                                Row(
-                                  children: [
-                                    RealTimeClock(),
-                                    SizedBox(width: 78),
-                                    Icon(
-                                      Icons.keyboard_arrow_down,
-                                      color: Color(0xFF1E293B),
-                                      size: 20,
+                              ),
+                              const SizedBox(height: 16),
+
+                              Obx(() {
+                                final selectedId = homeController.selectedDrawSessionId.value;
+                                final activeLang = localizationController.currentLanguage.value;
+                                
+                                String currentDrawName = 'All Sessions';
+                                if (selectedId != null && homeController.drawFilters.isNotEmpty) {
+                                  final currentFilter = homeController.drawFilters.firstWhere(
+                                    (f) => f['draw_session_id'] == selectedId,
+                                    orElse: () => null,
+                                  );
+                                  if (currentFilter != null) {
+                                    if (activeLang == 'fr') {
+                                      currentDrawName = currentFilter['name_fr'] ?? currentFilter['name_en'] ?? '';
+                                    } else if (activeLang == 'ht') {
+                                      currentDrawName = currentFilter['name_ht'] ?? currentFilter['name_en'] ?? '';
+                                    } else {
+                                      currentDrawName = currentFilter['name_en'] ?? '';
+                                    }
+                                  }
+                                } else {
+                                  currentDrawName = 'all_sessions'.tr == 'all_sessions' ? 'All Sessions' : 'all_sessions'.tr;
+                                }
+
+                                return GestureDetector(
+                                  onTap: () async {
+                                    if (homeController.drawFilters.isEmpty) return;
+                                    
+                                    final RelativeRect position = RelativeRect.fromLTRB(
+                                      16.0,
+                                      MediaQuery.of(context).size.height * 0.45,
+                                      16.0,
+                                      0,
+                                    );
+                                    
+                                    final items = <PopupMenuEntry<int?>>[
+                                      PopupMenuItem<int?>(
+                                        value: null,
+                                        child: Text(
+                                          'all_sessions'.tr == 'all_sessions' ? 'All Sessions' : 'all_sessions'.tr,
+                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ];
+                                    
+                                    for (var filter in homeController.drawFilters) {
+                                      final int id = filter['draw_session_id'];
+                                      String name = filter['name_en'] ?? '';
+                                      if (activeLang == 'fr') {
+                                        name = filter['name_fr'] ?? filter['name_en'] ?? '';
+                                      } else if (activeLang == 'ht') {
+                                        name = filter['name_ht'] ?? filter['name_en'] ?? '';
+                                      }
+                                      items.add(PopupMenuItem<int?>(
+                                        value: id,
+                                        child: Text(name),
+                                      ));
+                                    }
+                                    
+                                    final int? result = await showMenu<int?>(
+                                      context: context,
+                                      position: position,
+                                      items: items,
+                                      elevation: 8,
+                                    );
+                                    
+                                    homeController.selectedDrawSessionId.value = result;
+                                  },
+                                  child: Container(
+                                    height: 48,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFFF5EA),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Centered Play & Win Badge
-                          Center(
-                            child: Image.asset(
-                              'lib/assets/images/Play&Win.png',
-                              height: 60,
-                              width: 320,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-
-                          // Game Play Section Title & Agent Play Cards List
-                          Obx(() {
-                            final selectedGame = homeController.games
-                                .firstWhere(
-                                  (g) =>
-                                      g.id ==
-                                      homeController.selectedGameId.value,
-                                  orElse: () => homeController.games.first,
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Row(
+                                            children: [
+                                              const Icon(
+                                                Icons.dark_mode_rounded,
+                                                color: Color(0xFF2563EB),
+                                                size: 20,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  currentDrawName,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w700,
+                                                    color: Color(0xFF1E293B),
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Row(
+                                          children: [
+                                            const RealTimeClock(),
+                                            const SizedBox(width: 16),
+                                            const Icon(
+                                              Icons.keyboard_arrow_down,
+                                              color: Color(0xFF1E293B),
+                                              size: 20,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 );
+                              }),
+                              const SizedBox(height: 24),
 
-                            final String gameTitle =
-                                selectedGame.id == 'borlette_2d'
-                                ? '${selectedGame.name} ${selectedGame.category}'
-                                : selectedGame.name;
+                              // Centered Play & Win Badge
+                              Center(
+                                child: Image.asset(
+                                  'lib/assets/images/Play&Win.png',
+                                  height: 60,
+                                  width: 320,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
 
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  gameTitle,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1E293B),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                _buildAgentPlayCard(
-                                  agentName: 'Agent Bon Chans',
-                                  drawName: 'FL Evening',
-                                  nextDrawTime: '9:45 PM (Evening)',
-                                  gameCategory: selectedGame.category,
-                                  payout: selectedGame.payout.replaceAll(
-                                    'Payout: ',
-                                    '',
-                                  ),
-                                  hasBorder: false,
-                                  onTap: () {
-                                    Get.to(
-                                      () => BorletteView(game: selectedGame),
+                              // Game Play Section Title & Agent Play Cards List
+                              Obx(() {
+                                if (homeController.games.isEmpty) {
+                                  return const SizedBox();
+                                }
+
+                                final selectedGame = homeController.games
+                                    .firstWhere(
+                                      (g) =>
+                                          g.id ==
+                                          homeController.selectedGameId.value,
+                                      orElse: () => homeController.games.first,
                                     );
-                                  },
-                                ),
-                                _buildAgentPlayCard(
-                                  agentName: 'Agent Royale',
-                                  drawName: 'FL Evening',
-                                  nextDrawTime: '9:45 PM (Evening)',
-                                  gameCategory: selectedGame.category,
-                                  payout: selectedGame.payout.replaceAll(
-                                    'Payout: ',
-                                    '',
-                                  ),
-                                  hasBorder: false,
-                                  onTap: () {
-                                    Get.to(
-                                      () => BorletteView(game: selectedGame),
-                                    );
-                                  },
-                                ),
-                                _buildAgentPlayCard(
-                                  agentName: 'Agent Lucky Soleil',
-                                  drawName: 'FL Evening',
-                                  nextDrawTime: '9:45 PM (Evening)',
-                                  gameCategory: selectedGame.category,
-                                  payout: selectedGame.payout.replaceAll(
-                                    'Payout: ',
-                                    '',
-                                  ),
-                                  hasBorder: false,
-                                  onTap: () {
-                                    Get.to(
-                                      () => BorletteView(game: selectedGame),
-                                    );
-                                  },
-                                ),
-                              ],
-                            );
-                          }),
-                        ],
+
+                                final String gameTitle =
+                                    selectedGame.id == 'borlette_2d'
+                                    ? '${selectedGame.name} ${selectedGame.category}'
+                                    : selectedGame.name;
+
+                                final activeLang = localizationController.currentLanguage.value;
+
+                                if (homeController.gameBoard.isEmpty) {
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        gameTitle,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF1E293B),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 24),
+                                      Center(
+                                        child: Text(
+                                          'no_games_available'.tr == 'no_games_available' ? 'No games available at this time' : 'no_games_available'.tr,
+                                          style: const TextStyle(
+                                            color: Colors.grey,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }
+
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      gameTitle,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF1E293B),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    ...List.generate(homeController.gameBoard.length, (idx) {
+                                      final board = homeController.gameBoard[idx];
+                                      
+                                      String agentName = board['agent_name_en'] ?? '';
+                                      if (activeLang == 'fr') {
+                                        agentName = board['agent_name_fr'] ?? board['agent_name_en'] ?? '';
+                                      } else if (activeLang == 'ht') {
+                                        agentName = board['agent_name_ht'] ?? board['agent_name_en'] ?? '';
+                                      }
+
+                                      String drawName = board['draw_session_name_en'] ?? '';
+                                      if (activeLang == 'fr') {
+                                        drawName = board['draw_session_name_fr'] ?? board['draw_session_name_en'] ?? '';
+                                      } else if (activeLang == 'ht') {
+                                        drawName = board['draw_session_name_ht'] ?? board['draw_session_name_en'] ?? '';
+                                      }
+
+                                      String nextDrawTime = board['next_draw_label_en'] ?? '';
+                                      if (activeLang == 'fr') {
+                                        nextDrawTime = board['next_draw_label_fr'] ?? board['next_draw_label_en'] ?? '';
+                                      } else if (activeLang == 'ht') {
+                                        nextDrawTime = board['next_draw_label_ht'] ?? board['next_draw_label_en'] ?? '';
+                                      }
+
+                                      final winLabel = board['win_label'] ?? '';
+                                      final payoutStr = winLabel.replaceAll('WIN ', '');
+
+                                      final boardGameModel = GameModel(
+                                        id: selectedGame.id,
+                                        name: selectedGame.name,
+                                        payout: selectedGame.payout,
+                                        category: selectedGame.category,
+                                        cardGradient: selectedGame.cardGradient,
+                                        minBet: selectedGame.minBet,
+                                        maxBet: selectedGame.maxBet,
+                                        agentName: agentName,
+                                        drawName: drawName,
+                                        nextDrawTime: nextDrawTime,
+                                        rawBoardData: Map<String, dynamic>.from(board),
+                                      );
+
+                                      return _buildAgentPlayCard(
+                                        agentName: agentName,
+                                        drawName: drawName,
+                                        nextDrawTime: nextDrawTime,
+                                        gameCategory: selectedGame.category,
+                                        payout: payoutStr,
+                                        hasBorder: false,
+                                        onTap: () {
+                                          Get.to(
+                                            () => BorletteView(game: boardGameModel),
+                                          );
+                                        },
+                                      );
+                                    }),
+                                  ],
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (homeController.isLoading.value)
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.white.withOpacity(0.3),
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF0D319C),
+                          ),
+                        ),
                       ),
                     ),
-                  ],
-                ),
+                ],
               ),
             ),
           ),
@@ -487,7 +646,11 @@ class HomeView extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Next Draw is $nextDrawTime',
+                  (nextDrawTime.toLowerCase().contains('next draw') ||
+                          nextDrawTime.toLowerCase().contains('prochain') ||
+                          nextDrawTime.toLowerCase().contains('pwochen'))
+                      ? nextDrawTime
+                      : 'Next Draw is $nextDrawTime',
                   style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 10,

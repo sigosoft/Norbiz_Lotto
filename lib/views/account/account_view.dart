@@ -760,6 +760,7 @@ class AccountView extends StatelessWidget {
   }
 
   void _showLogoutBottomSheet(BuildContext context) {
+    final authController = Get.find<AuthController>();
     Get.bottomSheet(
       Material(
         color: Colors.white,
@@ -856,7 +857,7 @@ class AccountView extends StatelessWidget {
                       child: ElevatedButton(
                         onPressed: () {
                           Get.back();
-                          Get.offAll(() => const SignInView());
+                          authController.logout();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFE9900),

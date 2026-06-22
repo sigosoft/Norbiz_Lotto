@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../../configs/theme.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/localization_controller.dart';
+import '../../controllers/home_controller.dart';
+import '../../configs/toast.dart';
 import '../navigation/main_navigation_view.dart';
 import 'signup_view.dart';
 import 'reset_password_view.dart';
@@ -160,12 +162,18 @@ class SignInView extends StatelessWidget {
                                             size: 16,
                                           ),
                                           const SizedBox(width: 8),
-                                          const Text(
-                                            '+509',
-                                            style: TextStyle(
-                                              color: Color(0xFF2C2C2C),
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14,
+                                          GestureDetector(
+                                            onTap: () => authController.showCountryCodePicker(context),
+                                            behavior: HitTestBehavior.opaque,
+                                            child: Obx(
+                                              () => Text(
+                                                authController.selectedCountryDialCode.value,
+                                                style: const TextStyle(
+                                                  color: Color(0xFF2C2C2C),
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
                                             ),
                                           ),
                                           const SizedBox(width: 8),
@@ -332,17 +340,24 @@ class SignInView extends StatelessWidget {
                                               width: double.infinity,
                                               height: 40,
                                               child: ElevatedButton(
-                                                onPressed: () async {
-                                                  bool success =
-                                                      await authController
-                                                          .login();
-                                                  if (success) {
-                                                    Get.offAll(
-                                                      () =>
-                                                          const MainNavigationView(),
-                                                    );
-                                                  }
-                                                },
+                                                 onPressed: () async {
+                                                   if (authController.validateSignInForm()) {
+                                                     bool success = await authController.login();
+                                                     if (success) {
+                                                       Get.find<HomeController>().currentNavIndex.value = 0;
+                                                       Get.offAll(
+                                                         () => const MainNavigationView(),
+                                                       );
+                                                       Future.delayed(
+                                                         const Duration(milliseconds: 300),
+                                                         () => showToast(
+                                                           'You are logged in successfully.'.tr,
+                                                           title: 'Success',
+                                                         ),
+                                                       );
+                                                     }
+                                                   }
+                                                 },
                                                 style: ElevatedButton.styleFrom(
                                                   backgroundColor:
                                                       AppTheme.buttonOrange,

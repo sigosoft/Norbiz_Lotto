@@ -139,12 +139,21 @@ class ResetPasswordView extends StatelessWidget {
                                         size: 20,
                                       ),
                                       const SizedBox(width: 8),
-                                      const Text(
-                                        '+509',
-                                        style: TextStyle(
-                                          color: Color(0xFF2C2C2C),
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
+                                      GestureDetector(
+                                        onTap: () => authController
+                                            .showCountryCodePicker(context),
+                                        behavior: HitTestBehavior.opaque,
+                                        child: Obx(
+                                          () => Text(
+                                            authController
+                                                .selectedCountryDialCode
+                                                .value,
+                                            style: const TextStyle(
+                                              color: Color(0xFF2C2C2C),
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(width: 8),
@@ -202,15 +211,18 @@ class ResetPasswordView extends StatelessWidget {
                                       height: 40,
                                       child: ElevatedButton(
                                         onPressed: () async {
-                                          bool success = await authController
-                                              .requestPasswordReset();
-                                          if (success) {
-                                            authController.startOtpTimer();
-                                            Get.to(
-                                              () => const OtpView(
-                                                isResetPasswordFlow: true,
-                                              ),
-                                            );
+                                          if (authController
+                                              .validateResetPasswordForm()) {
+                                            bool success = await authController
+                                                .requestPasswordReset();
+                                            if (success) {
+                                              authController.startOtpTimer();
+                                              Get.to(
+                                                () => const OtpView(
+                                                  isResetPasswordFlow: true,
+                                                ),
+                                              );
+                                            }
                                           }
                                         },
                                         style: ElevatedButton.styleFrom(

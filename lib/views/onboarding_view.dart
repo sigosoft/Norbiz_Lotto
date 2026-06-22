@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../configs/theme.dart';
+import '../configs/api_config.dart';
 import '../controllers/localization_controller.dart';
 import 'auth/signin_view.dart';
 
@@ -16,10 +17,13 @@ class _OnboardingViewState extends State<OnboardingView> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   double _scrollOffset = 0.0;
+  List<dynamic> _apiScreens = [];
+  bool _isLoadingApi = true;
 
   @override
   void initState() {
     super.initState();
+    _fetchSplashScreens();
     _pageController.addListener(() {
       if (mounted && _pageController.hasClients) {
         setState(() {
@@ -27,6 +31,68 @@ class _OnboardingViewState extends State<OnboardingView> {
         });
       }
     });
+  }
+
+  Future<void> _fetchSplashScreens() async {
+    try {
+      final connect = GetConnect();
+      connect.timeout = const Duration(seconds: 15);
+      final String url = '${ApiConfig.baseUrl}${ApiConfig.splashScreens}';
+      debugPrint('=== API CALL REQUEST ===');
+      debugPrint('URL: $url');
+
+      final response = await connect.get(url);
+
+      debugPrint('=== API CALL RESPONSE ===');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 200 && response.body != null) {
+        final data = response.body;
+        if (data['status'] == 'true' || data['status'] == true) {
+          if (mounted) {
+            setState(() {
+              _apiScreens = data['data'] as List<dynamic>? ?? [];
+              _isLoadingApi = false;
+            });
+          }
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching splash screens: $e');
+    }
+    if (mounted) {
+      setState(() {
+        _isLoadingApi = false;
+      });
+    }
+  }
+
+  String getTitle(int index, String lang) {
+    if (_apiScreens.isNotEmpty && index < _apiScreens.length) {
+      final item = _apiScreens[index];
+      if (lang == 'fr') {
+        return item['title_tr'] ?? item['title_en'] ?? '';
+      } else if (lang == 'ht') {
+        return item['title_ht'] ?? item['title_en'] ?? '';
+      }
+      return item['title_en'] ?? '';
+    }
+    return _onboardingData[index]['titleKey'].toString().tr;
+  }
+
+  String getDescription(int index, String lang) {
+    if (_apiScreens.isNotEmpty && index < _apiScreens.length) {
+      final item = _apiScreens[index];
+      if (lang == 'fr') {
+        return item['content_tr'] ?? item['content_en'] ?? '';
+      } else if (lang == 'ht') {
+        return item['content_ht'] ?? item['content_en'] ?? '';
+      }
+      return item['content_en'] ?? '';
+    }
+    return _onboardingData[index]['descKey'].toString().tr;
   }
 
   final List<Map<String, dynamic>> _onboardingData = [
@@ -235,6 +301,10 @@ class _OnboardingViewState extends State<OnboardingView> {
     final imgTopInSlide = 60.0 * sh;
     final imgLeft = 1.0 * sw;
 
+    final lang = Get.find<LocalizationController>().currentLanguage.value;
+    final title = getTitle(index, lang);
+    final desc = getDescription(index, lang);
+
     if (index == 1) {
       return SizedBox(
         width: size.width,
@@ -251,7 +321,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    data['titleKey'].toString().tr,
+                    title,
                     style: TextStyle(
                       fontSize: size.width * 0.065,
                       fontWeight: FontWeight.bold,
@@ -261,7 +331,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                   ),
                   SizedBox(height: 12 * sh),
                   Text(
-                    data['descKey'].toString().tr,
+                    desc,
                     style: TextStyle(
                       fontSize: size.width * 0.033,
                       color: Colors.grey.shade600,
@@ -327,7 +397,9 @@ class _OnboardingViewState extends State<OnboardingView> {
   }
 
   Widget _buildTextSection(Size size) {
-    final data = _onboardingData[_currentPage];
+    final lang = Get.find<LocalizationController>().currentLanguage.value;
+    final title = getTitle(_currentPage, lang);
+    final desc = getDescription(_currentPage, lang);
 
     return Container(
       color: Colors.transparent,
@@ -345,7 +417,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 260),
                   child: Text(
-                    data['titleKey'].toString().tr,
+                    title,
                     key: ValueKey<int>(_currentPage),
                     style: TextStyle(
                       fontSize: size.width * 0.065,
@@ -359,7 +431,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 260),
                   child: Text(
-                    data['descKey'].toString().tr,
+                    desc,
                     key: ValueKey<String>('d$_currentPage'),
                     style: TextStyle(
                       fontSize: size.width * 0.033,
@@ -504,7 +576,10 @@ class _OnboardingViewState extends State<OnboardingView> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    data['titleKey'].toString().tr,
+                    getTitle(
+                      _currentPage,
+                      localizationController.currentLanguage.value,
+                    ),
                     style: TextStyle(
                       fontSize: size.width * 0.032,
                       fontWeight: FontWeight.bold,
@@ -514,7 +589,10 @@ class _OnboardingViewState extends State<OnboardingView> {
                   ),
                   SizedBox(height: size.height * 0.02),
                   Text(
-                    data['descKey'].toString().tr,
+                    getDescription(
+                      _currentPage,
+                      localizationController.currentLanguage.value,
+                    ),
                     style: TextStyle(
                       fontSize: size.width * 0.02,
                       color: Colors.grey.shade600,

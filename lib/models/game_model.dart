@@ -8,6 +8,10 @@ class GameModel {
   final Gradient cardGradient;
   final double minBet;
   final double maxBet;
+  final String? agentName;
+  final String? drawName;
+  final String? nextDrawTime;
+  final Map<String, dynamic>? rawBoardData;
 
   GameModel({
     required this.id,
@@ -17,5 +21,9 @@ class GameModel {
     required this.cardGradient,
     required this.minBet,
     required this.maxBet,
+    this.agentName,
+    this.drawName,
+    this.nextDrawTime,
+    this.rawBoardData,
   });
 }

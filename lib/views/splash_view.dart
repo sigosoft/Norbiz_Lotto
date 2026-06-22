@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../controllers/auth_controller.dart';
+import 'navigation/main_navigation_view.dart';
 import 'onboarding_view.dart';
 
 class SplashView extends StatefulWidget {
@@ -13,9 +16,29 @@ class _SplashViewState extends State<SplashView> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 1500), () {
+    _navigateToNext();
+  }
+
+  Future<void> _navigateToNext() async {
+    await Future.delayed(const Duration(milliseconds: 1500));
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? token = prefs.getString('auth_token');
+      
+      if (token != null && token.isNotEmpty) {
+        final authController = Get.find<AuthController>();
+        authController.userName.value = prefs.getString('user_name') ?? 'John Doe';
+        authController.userPhone.value = prefs.getString('user_phone') ?? '';
+        authController.userEmail.value = prefs.getString('user_email') ?? '';
+        
+        Get.offAll(() => const MainNavigationView());
+      } else {
+        Get.offAll(() => const OnboardingView());
+      }
+    } catch (e) {
+      debugPrint('Error restoring session: $e');
       Get.offAll(() => const OnboardingView());
-    });
+    }
   }
 
   @override

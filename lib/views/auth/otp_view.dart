@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../configs/theme.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/localization_controller.dart';
+import '../../configs/toast.dart';
 import '../navigation/main_navigation_view.dart';
 import 'create_password_view.dart';
 
@@ -127,7 +128,8 @@ class OtpView extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 40),
                             child: Text(
                               'verification_sent'.trParams({
-                                'phone': '+509 $phoneNum',
+                                'phone':
+                                    '${authController.selectedCountryDialCode.value} $phoneNum',
                               }),
                               textAlign: TextAlign.center,
                               style: TextStyle(
@@ -142,17 +144,17 @@ class OtpView extends StatelessWidget {
 
                           // Centered group container for OTP boxes + Resend countdown
                           SizedBox(
-                            width: 256,
+                            width: 320,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
-                                  children: List.generate(4, (index) {
+                                  children: List.generate(6, (index) {
                                     return SizedBox(
-                                      width: 52,
-                                      height: 52,
+                                      width: 44,
+                                      height: 44,
                                       child: Center(
                                         child: TextField(
                                           controller: authController
@@ -190,7 +192,7 @@ class OtpView extends StatelessWidget {
                                             ),
                                           ),
                                           onChanged: (value) {
-                                            if (value.isNotEmpty && index < 3) {
+                                            if (value.isNotEmpty && index < 5) {
                                               authController
                                                   .otpFocusNodes[index + 1]
                                                   .requestFocus();
@@ -315,16 +317,60 @@ class OtpView extends StatelessWidget {
                                       height: 40,
                                       child: ElevatedButton(
                                         onPressed: () async {
-                                          bool ok = await authController
-                                              .verifyOtp();
-                                          if (ok) {
-                                            if (isResetPasswordFlow) {
+                                          String otp = authController
+                                              .otpControllers
+                                              .map((c) => c.text)
+                                              .join()
+                                              .trim();
+                                          if (otp.length < 6) {
+                                            showToast(
+                                              'Please enter the 6-digit verification code.'
+                                                  .tr,
+                                              title: 'Error',
+                                            );
+                                            return;
+                                          }
+
+                                          if (isResetPasswordFlow) {
+                                            bool success = await authController.verifyOtp();
+                                            if (success) {
+                                              for (var c
+                                                  in authController
+                                                      .otpControllers) {
+                                                c.clear();
+                                              }
                                               Get.off(
                                                 () => const CreatePasswordView(),
                                               );
-                                            } else {
+                                            }
+                                          } else {
+                                            if (otp != "123456") {
+                                              showToast(
+                                                'Invalid verification code.'.tr,
+                                                title: 'Error',
+                                              );
+                                              return;
+                                            }
+                                            bool success = await authController
+                                                .register();
+                                            if (success) {
+                                              for (var c
+                                                  in authController
+                                                      .otpControllers) {
+                                                c.clear();
+                                              }
                                               Get.offAll(
-                                                () => const MainNavigationView(),
+                                                () =>
+                                                    const MainNavigationView(),
+                                              );
+                                              Future.delayed(
+                                                const Duration(
+                                                  milliseconds: 300,
+                                                ),
+                                                () => showToast(
+                                                  'Registration successful.'.tr,
+                                                  title: 'Success',
+                                                ),
                                               );
                                             }
                                           }

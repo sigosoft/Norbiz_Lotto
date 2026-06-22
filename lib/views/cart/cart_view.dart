@@ -20,7 +20,7 @@ class CartView extends StatelessWidget {
       return betAmount * 4500;
     } else if (name.contains('5')) {
       return betAmount * 50000;
-    } else if (name.contains('maryaj')) {
+    } else if (name.contains('maryaj') || name.contains('marriage')) {
       return betAmount * 50000;
     }
     return betAmount * 60;
@@ -34,7 +34,7 @@ class CartView extends StatelessWidget {
   }
 
   Widget buildSelectionBadges(String gameName, String numbers) {
-    final isMaryaj = gameName.toLowerCase().contains('maryaj');
+    final isMaryaj = gameName.toLowerCase().contains('maryaj') || gameName.toLowerCase().contains('marriage');
     if (isMaryaj && numbers.length >= 4) {
       return Row(
         mainAxisSize: MainAxisSize.min,
