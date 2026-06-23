@@ -208,6 +208,11 @@ class BetHistoryView extends StatelessWidget {
                   // History list results
                   Expanded(
                     child: Obx(() {
+                      if (historyController.isLoading.value) {
+                        return const Center(
+                          child: CircularProgressIndicator(color: Color(0xFFFE9900)),
+                        );
+                      }
                       final list = historyController.filteredTickets;
                       if (list.isEmpty) return emptyWidget;
 

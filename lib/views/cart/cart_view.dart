@@ -7,8 +7,21 @@ import '../../controllers/localization_controller.dart';
 import '../../controllers/auth_controller.dart';
 import '../dialogs/bet_success_view.dart';
 
-class CartView extends StatelessWidget {
+class CartView extends StatefulWidget {
   const CartView({Key? key}) : super(key: key);
+
+  @override
+  State<CartView> createState() => _CartViewState();
+}
+
+class _CartViewState extends State<CartView> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.find<CartController>().fetchCart();
+    });
+  }
 
   double calculatePotentialWin(String gameName, double betAmount) {
     final name = gameName.toLowerCase();
@@ -30,11 +43,16 @@ class CartView extends StatelessWidget {
     if (dateString.contains('9:45')) {
       return '9:45 PM (Evening)';
     }
+    if (dateString.contains('PM') || dateString.contains('AM') || dateString.contains('Midday') || dateString.contains('Evening')) {
+      return dateString;
+    }
     return '2:00 PM (Afternoon)';
   }
 
   Widget buildSelectionBadges(String gameName, String numbers) {
-    final isMaryaj = gameName.toLowerCase().contains('maryaj') || gameName.toLowerCase().contains('marriage');
+    final isMaryaj =
+        gameName.toLowerCase().contains('maryaj') ||
+        gameName.toLowerCase().contains('marriage');
     if (isMaryaj && numbers.length >= 4) {
       return Row(
         mainAxisSize: MainAxisSize.min,
@@ -82,14 +100,6 @@ class CartView extends StatelessWidget {
     final cartController = Get.find<CartController>();
     final localizationController = Get.find<LocalizationController>();
     final authController = Get.find<AuthController>();
-
-    if (cartController.cartTickets.isEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (cartController.cartTickets.isEmpty) {
-          cartController.addTicket('Borlette FL', '99', 10.0);
-        }
-      });
-    }
 
     final customHeaderRow = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -564,16 +574,35 @@ class CartView extends StatelessWidget {
               gradient: AppTheme.pageBackgroundGradient,
             ),
             child: SafeArea(
-              child: Column(
+              child: Stack(
                 children: [
-                  customHeaderRow,
-                  Expanded(
-                    child: Obx(
-                      () => cartController.cartTickets.isEmpty
-                          ? emptyWidget
-                          : buildCartList(),
-                    ),
+                  Column(
+                    children: [
+                      customHeaderRow,
+                      Expanded(
+                        child: Obx(
+                          () => cartController.cartTickets.isEmpty
+                              ? emptyWidget
+                              : buildCartList(),
+                        ),
+                      ),
+                    ],
                   ),
+                  Obx(() {
+                    if (cartController.isLoading.value) {
+                      return Positioned.fill(
+                        child: Container(
+                          color: Colors.white.withOpacity(0.3),
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFF0D319C),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  }),
                 ],
               ),
             ),

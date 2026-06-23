@@ -7,6 +7,7 @@ import '../../controllers/cart_controller.dart';
 import '../../controllers/localization_controller.dart';
 import '../dialogs/bet_success_view.dart';
 import '../cart/cart_view.dart';
+import '../../configs/toast.dart';
 
 class BorletteView extends StatelessWidget {
   final GameModel game;
@@ -481,7 +482,31 @@ class BorletteView extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: gameController.performQuickPick,
+                    onPressed: () {
+                      final String selectedNumbers =
+                          gameController.selectedNumbers.value;
+                      int requiredLen = game.category == '2D'
+                          ? 2
+                          : game.category == '3D'
+                          ? 3
+                          : game.category == '4D'
+                          ? 4
+                          : game.category == '5D'
+                          ? 5
+                          : (game.category == '2 C' ||
+                                game.category == '2 combo')
+                          ? 4
+                          : 4;
+
+                      if (selectedNumbers.length < requiredLen) {
+                        showToast(
+                          'Please enter a number first.'.tr,
+                          title: 'Error',
+                        );
+                        return;
+                      }
+                      gameController.isQuickPicked.value = true;
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryOrange,
                       foregroundColor: Colors.white,
@@ -722,23 +747,149 @@ class BorletteView extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          // Action Buttons row
           Row(
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () {
+                  onPressed: () async {
+                    String selectedNumbers =
+                        gameController.selectedNumbers.value;
+                    int requiredLen = game.category == '2D'
+                        ? 2
+                        : game.category == '3D'
+                        ? 3
+                        : game.category == '4D'
+                        ? 4
+                        : game.category == '5D'
+                        ? 5
+                        : (game.category == '2 C' || game.category == '2 combo')
+                        ? 4
+                        : 4;
+
+                    debugPrint('=== Add to Cart Button Pressed ===');
+                    debugPrint(
+                      'selectedNumbers: "$selectedNumbers" (length: ${selectedNumbers.length}, required: $requiredLen)',
+                    );
+
+                    if (selectedNumbers.length < requiredLen) {
+                      debugPrint(
+                        'Validation failed: selectedNumbers length is less than requiredLen.',
+                      );
+                      showToast(
+                        'Please select all required numbers.'.tr,
+                        title: 'Error',
+                      );
+                      return;
+                    }
+
                     double amount =
                         double.tryParse(gameController.enteredAmount.value) ??
                         0.0;
-                    if (gameController.validateBet(amount)) {
-                      cartController.addTicket(game.name, selected, amount);
-                      _showSuccessDialog(
-                        context,
-                        gameController,
-                        cartController,
+                    debugPrint(
+                      'enteredAmount raw: "${gameController.enteredAmount.value}", parsed: $amount (min: ${game.minBet}, max: ${game.maxBet})',
+                    );
+
+                    if (amount <= 0.0) {
+                      debugPrint('Validation failed: amount <= 0.0');
+                      showToast(
+                        'Please enter a valid bet amount.'.tr,
+                        title: 'Error',
                       );
+                      return;
+                    }
+                    if (amount < game.minBet) {
+                      debugPrint('Validation failed: amount < minBet');
+                      showToast(
+                        'Minimum bet amount is \$${game.minBet.toStringAsFixed(2)}.'
+                            .tr,
+                        title: 'Error',
+                      );
+                      return;
+                    }
+                    if (amount > game.maxBet) {
+                      debugPrint('Validation failed: amount > maxBet');
+                      showToast(
+                        'Maximum bet amount is \$${game.maxBet.toStringAsFixed(2)}.'
+                            .tr,
+                        title: 'Error',
+                      );
+                      return;
+                    }
+
+                    final bool isBetValid = gameController.validateBet(amount);
+                    debugPrint('gameController.validateBet check: $isBetValid');
+
+                    if (isBetValid) {
+                      // Determine drawId and gameTypeId
+                      int drawId = 1;
+                      if (game.rawBoardData != null) {
+                        final raw = game.rawBoardData!;
+                        final rawDrawId =
+                            raw['draw_id'] ??
+                            raw['draw_session_id'] ??
+                            raw['draw_session']?['id'] ??
+                            raw['id'];
+                        if (rawDrawId != null) {
+                          drawId = int.tryParse(rawDrawId.toString()) ?? 1;
+                        }
+                      }
+
+                      int gameTypeId = 1;
+                      if (game.rawBoardData != null &&
+                          game.rawBoardData!['game_type_id'] != null) {
+                        gameTypeId =
+                            int.tryParse(
+                              game.rawBoardData!['game_type_id'].toString(),
+                            ) ??
+                            1;
+                      } else {
+                        final name = game.id.toLowerCase();
+                        if (name.contains('borlette'))
+                          gameTypeId = 1;
+                        else if (name.contains('maryaj') ||
+                            name.contains('marriage'))
+                          gameTypeId = 2;
+                        else if (name.contains('3d') || name.contains('loto3'))
+                          gameTypeId = 3;
+                        else if (name.contains('4d') || name.contains('loto4'))
+                          gameTypeId = 4;
+                        else if (name.contains('5d') || name.contains('loto5'))
+                          gameTypeId = 5;
+                      }
+
+                      String numberPrimary = selectedNumbers;
+                      String numberSecondary = '';
+                      final isMaryaj =
+                          game.name.toLowerCase().contains('maryaj') ||
+                          game.name.toLowerCase().contains('marriage') ||
+                          game.id.toLowerCase().contains('maryaj') ||
+                          game.id.toLowerCase().contains('marriage');
+                      if (isMaryaj && selectedNumbers.length >= 4) {
+                        numberPrimary = selectedNumbers.substring(0, 2);
+                        numberSecondary = selectedNumbers.substring(2, 4);
+                      }
+
+                      debugPrint(
+                        'Calling cartController.addToCart: drawId=$drawId, gameTypeId=$gameTypeId, numberPrimary="$numberPrimary", numberSecondary="$numberSecondary", betAmount=$amount',
+                      );
+
+                      final success = await cartController.addToCart(
+                        drawId: drawId,
+                        gameTypeId: gameTypeId,
+                        numberPrimary: numberPrimary,
+                        numberSecondary: numberSecondary,
+                        betAmount: amount,
+                      );
+
+                      debugPrint('cartController.addToCart result: $success');
+
+                      if (success) {
+                        _showSuccessDialog(
+                          context,
+                          gameController,
+                          cartController,
+                        );
+                      }
                     }
                   },
                   style: OutlinedButton.styleFrom(
@@ -762,9 +913,55 @@ class BorletteView extends StatelessWidget {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
+                    String selectedNumbers =
+                        gameController.selectedNumbers.value;
+                    int requiredLen = game.category == '2D'
+                        ? 2
+                        : game.category == '3D'
+                        ? 3
+                        : game.category == '4D'
+                        ? 4
+                        : game.category == '5D'
+                        ? 5
+                        : (game.category == '2 C' || game.category == '2 combo')
+                        ? 4
+                        : 4;
+
+                    if (selectedNumbers.length < requiredLen) {
+                      showToast(
+                        'Please select all required numbers.'.tr,
+                        title: 'Error',
+                      );
+                      return;
+                    }
+
                     double amount =
                         double.tryParse(gameController.enteredAmount.value) ??
                         0.0;
+                    if (amount <= 0.0) {
+                      showToast(
+                        'Please enter a valid bet amount.'.tr,
+                        title: 'Error',
+                      );
+                      return;
+                    }
+                    if (amount < game.minBet) {
+                      showToast(
+                        'Minimum bet amount is \$${game.minBet.toStringAsFixed(2)}.'
+                            .tr,
+                        title: 'Error',
+                      );
+                      return;
+                    }
+                    if (amount > game.maxBet) {
+                      showToast(
+                        'Maximum bet amount is \$${game.maxBet.toStringAsFixed(2)}.'
+                            .tr,
+                        title: 'Error',
+                      );
+                      return;
+                    }
+
                     if (gameController.validateBet(amount)) {
                       cartController.clearCart();
                       cartController.addTicket(game.name, selected, amount);
@@ -967,52 +1164,71 @@ class BorletteView extends StatelessWidget {
                 gradient: AppTheme.pageBackgroundGradient,
               ),
               child: SafeArea(
-                child: Column(
+                child: Stack(
                   children: [
-                    customHeaderRow,
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: orientation == Orientation.portrait
-                          ? Column(
-                              children: [
-                                Expanded(
-                                  child: SingleChildScrollView(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16.0,
+                    Column(
+                      children: [
+                        customHeaderRow,
+                        const SizedBox(height: 8),
+                        Expanded(
+                          child: orientation == Orientation.portrait
+                              ? Column(
+                                  children: [
+                                    Expanded(
+                                      child: SingleChildScrollView(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16.0,
+                                        ),
+                                        child: scrollBody,
+                                      ),
                                     ),
-                                    child: scrollBody,
-                                  ),
-                                ),
-                                if (isKeypadVisible) keypadWidget,
-                              ],
-                            )
-                          : Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  flex: 5,
-                                  child: SingleChildScrollView(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16.0,
+                                    if (isKeypadVisible) keypadWidget,
+                                  ],
+                                )
+                              : Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      flex: 5,
+                                      child: SingleChildScrollView(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16.0,
+                                        ),
+                                        child: scrollBody,
+                                      ),
                                     ),
-                                    child: scrollBody,
-                                  ),
+                                    const VerticalDivider(
+                                      width: 1,
+                                      color: Colors.grey,
+                                    ),
+                                    Expanded(
+                                      flex: 5,
+                                      child: SingleChildScrollView(
+                                        child: isKeypadVisible
+                                            ? keypadWidget
+                                            : const SizedBox.shrink(),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const VerticalDivider(
-                                  width: 1,
-                                  color: Colors.grey,
-                                ),
-                                Expanded(
-                                  flex: 5,
-                                  child: SingleChildScrollView(
-                                    child: isKeypadVisible
-                                        ? keypadWidget
-                                        : const SizedBox.shrink(),
-                                  ),
-                                ),
-                              ],
-                            ),
+                        ),
+                      ],
                     ),
+                    Obx(() {
+                      if (cartController.isLoading.value) {
+                        return Positioned.fill(
+                          child: Container(
+                            color: Colors.white.withOpacity(0.3),
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF0D319C),
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    }),
                   ],
                 ),
               ),

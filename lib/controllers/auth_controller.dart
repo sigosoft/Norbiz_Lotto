@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:norbiz_loto/views/auth/signin_view.dart';
@@ -52,6 +54,9 @@ class AuthController extends GetxController {
   var userGender = 'Male'.obs;
   var userDob = '1990-01-01'.obs;
   var userWalletBalance = 500.00.obs;
+  var userImageUrl = ''.obs;
+  var selectedImagePath = ''.obs;
+  var userMobileRaw = ''.obs;
 
   void toggleSignInPasswordVisibility() {
     isSignInPasswordVisible.value = !isSignInPasswordVisible.value;
@@ -167,6 +172,7 @@ class AuthController extends GetxController {
             userName.value = details['name'] ?? 'John Doe';
             userPhone.value = details['mobile'] ?? signInPhoneController.text;
             userEmail.value = details['email'] ?? '';
+            userMobileRaw.value = details['mobile']?.toString() ?? signInPhoneController.text;
 
             final String? token = details['token'];
             debugPrint('Authentication Token: $token');
@@ -275,6 +281,7 @@ class AuthController extends GetxController {
                 '${signUpFirstNameController.text} ${signUpLastNameController.text}';
             userPhone.value = details['mobile'] ?? signUpPhoneController.text;
             userEmail.value = details['email'] ?? '';
+            userMobileRaw.value = details['mobile']?.toString() ?? signUpPhoneController.text;
 
             final String? token = details['token'];
             debugPrint('Authentication Token: $token');
@@ -428,19 +435,134 @@ class AuthController extends GetxController {
     }
   }
 
-  void updateProfile(
+  Future<bool> updateProfile(
     String first,
     String last,
     String phone,
     String email,
     String gender,
     String dob,
-  ) {
-    userName.value = '$first $last';
-    userPhone.value = phone;
-    userEmail.value = email;
-    userGender.value = gender;
-    userDob.value = dob;
+  ) async {
+    isLoading.value = true;
+    try {
+      final connect = GetConnect();
+      connect.timeout = const Duration(seconds: 15);
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      final Map<String, String> headers = {};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final Map<String, dynamic> body = {
+        'first_name': first,
+        'last_name': last,
+        'gender': gender.toLowerCase().contains('female') ? '2' : '1',
+        'date_of_birth': dob,
+        'country_code_id': selectedCountryId.value,
+        'mobile': phone,
+        'email': email,
+      };
+
+      if (selectedImagePath.value.isNotEmpty) {
+        final file = File(selectedImagePath.value);
+        if (await file.exists()) {
+          final fileBytes = await file.readAsBytes();
+          body['image'] = MultipartFile(fileBytes, filename: 'avatar.png');
+        }
+      }
+
+      final String url = '${ApiConfig.baseUrl}${ApiConfig.updateProfile}';
+      debugPrint('=== UPDATE PROFILE API CALL ===');
+      debugPrint('URL: $url');
+      debugPrint('Token: $token');
+      debugPrint('Headers: $headers');
+      debugPrint('Body Fields: $body');
+
+      final response = await connect.post(
+        url,
+        FormData(body),
+        headers: headers,
+      );
+
+      debugPrint('=== UPDATE PROFILE RESPONSE ===');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      isLoading.value = false;
+
+      if (response.statusCode == 200 && response.body != null) {
+        final dynamic resData = response.body;
+        Map<String, dynamic> dataMap;
+        if (resData is String) {
+          dataMap = Map<String, dynamic>.from(jsonDecode(resData));
+        } else if (resData is Map) {
+          dataMap = Map<String, dynamic>.from(resData);
+        } else {
+          showToast('Unexpected response format.', title: 'Error');
+          return false;
+        }
+
+        if (dataMap['status'] == 'true' || dataMap['status'] == true) {
+          final data = dataMap['data'] != null
+              ? Map<String, dynamic>.from(dataMap['data'])
+              : {};
+          final profile = data['profile'] != null
+              ? Map<String, dynamic>.from(data['profile'])
+              : {};
+
+          if (profile.isNotEmpty) {
+            final firstName = profile['first_name']?.toString() ?? '';
+            final lastName = profile['last_name']?.toString() ?? '';
+            userName.value = '$firstName $lastName'.trim();
+            if (userName.value.isEmpty) {
+              userName.value = 'John Doe';
+            }
+
+            userPhone.value =
+                profile['phone_display']?.toString() ??
+                profile['mobile']?.toString() ??
+                '';
+            userEmail.value = profile['email']?.toString() ?? '';
+            userDob.value = profile['date_of_birth']?.toString() ?? '';
+            userGender.value =
+                profile['gender_label_en']?.toString() ??
+                profile['gender']?.toString() ??
+                '';
+            userImageUrl.value = profile['image']?.toString() ?? '';
+            userMobileRaw.value = profile['mobile']?.toString() ?? '';
+
+            await prefs.setString('user_name', userName.value);
+            await prefs.setString(
+              'user_phone',
+              profile['mobile']?.toString() ?? '',
+            );
+            await prefs.setString('user_email', userEmail.value);
+          }
+
+          selectedImagePath.value = '';
+          return true;
+        } else {
+          final dynamic errMsg =
+              dataMap['message'] ?? 'Failed to update profile.';
+          showToast(errMsg.toString(), title: 'Error');
+          return false;
+        }
+      } else {
+        final dynamic resData = response.body;
+        String errMsg = 'Server error. Please try again.';
+        if (resData != null && resData is Map && resData['message'] != null) {
+          errMsg = resData['message'].toString();
+        }
+        showToast(errMsg, title: 'Error');
+        return false;
+      }
+    } catch (e) {
+      isLoading.value = false;
+      showToast('Connection error: $e', title: 'Error');
+      return false;
+    }
   }
 
   Future<void> fetchCountryCodes() async {
@@ -674,6 +796,85 @@ class AuthController extends GetxController {
       isLoading.value = false;
       showToast('Connection error: $e', title: 'Error');
       return false;
+    }
+  }
+
+  Future<void> fetchProfile() async {
+    try {
+      final connect = GetConnect();
+      connect.timeout = const Duration(seconds: 15);
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      final Map<String, String> headers = {};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final String url = '${ApiConfig.baseUrl}${ApiConfig.profile}';
+      debugPrint('=== FETCH PROFILE API CALL ===');
+      debugPrint('URL: $url');
+      debugPrint('Token: $token');
+      debugPrint('Headers: $headers');
+
+      final response = await connect.get(url, headers: headers);
+
+      debugPrint('=== FETCH PROFILE RESPONSE ===');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 200 && response.body != null) {
+        final dynamic resData = response.body;
+        Map<String, dynamic> dataMap;
+        if (resData is String) {
+          dataMap = Map<String, dynamic>.from(jsonDecode(resData));
+        } else if (resData is Map) {
+          dataMap = Map<String, dynamic>.from(resData);
+        } else {
+          debugPrint('Unexpected response body type: ${resData.runtimeType}');
+          return;
+        }
+
+        if (dataMap['status'] == 'true' || dataMap['status'] == true) {
+          final data = dataMap['data'] != null
+              ? Map<String, dynamic>.from(dataMap['data'])
+              : {};
+          final profile = data['profile'] != null
+              ? Map<String, dynamic>.from(data['profile'])
+              : {};
+
+          if (profile.isNotEmpty) {
+            final firstName = profile['first_name']?.toString() ?? '';
+            final lastName = profile['last_name']?.toString() ?? '';
+            userName.value = '$firstName $lastName'.trim();
+            if (userName.value.isEmpty) {
+              userName.value = 'John Doe';
+            }
+
+            userPhone.value =
+                profile['phone_display']?.toString() ??
+                profile['mobile']?.toString() ??
+                '';
+            userEmail.value = profile['email']?.toString() ?? '';
+            userDob.value = profile['date_of_birth']?.toString() ?? '';
+            userGender.value =
+                profile['gender_label_en']?.toString() ??
+                profile['gender']?.toString() ??
+                '';
+            userImageUrl.value = profile['image']?.toString() ?? '';
+            userMobileRaw.value = profile['mobile']?.toString() ?? '';
+
+            await prefs.setString('user_name', userName.value);
+            await prefs.setString(
+              'user_phone',
+              profile['mobile']?.toString() ?? '',
+            );
+            await prefs.setString('user_email', userEmail.value);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching profile: $e');
     }
   }
 }

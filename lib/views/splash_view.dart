@@ -24,13 +24,16 @@ class _SplashViewState extends State<SplashView> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final String? token = prefs.getString('auth_token');
-      
+
       if (token != null && token.isNotEmpty) {
         final authController = Get.find<AuthController>();
-        authController.userName.value = prefs.getString('user_name') ?? 'John Doe';
+        authController.userName.value =
+            prefs.getString('user_name') ?? 'John Doe';
         authController.userPhone.value = prefs.getString('user_phone') ?? '';
+        authController.userMobileRaw.value =
+            prefs.getString('user_phone') ?? '';
         authController.userEmail.value = prefs.getString('user_email') ?? '';
-        
+
         Get.offAll(() => const MainNavigationView());
       } else {
         Get.offAll(() => const OnboardingView());

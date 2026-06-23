@@ -76,21 +76,43 @@ class AccountView extends StatelessWidget {
             Container(
               height: 64,
               width: 64,
-              alignment: Alignment.center,
               decoration: const BoxDecoration(
                 color: Color(0xFFFFD15B),
                 shape: BoxShape.circle,
               ),
-              child: Text(
-                authController.userName.value.isNotEmpty
-                    ? authController.userName.value[0].toUpperCase()
-                    : 'J',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
+              child: authController.userImageUrl.value.isNotEmpty
+                  ? ClipOval(
+                      child: Image.network(
+                        authController.userImageUrl.value,
+                        width: 64,
+                        height: 64,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Center(
+                          child: Text(
+                            authController.userName.value.isNotEmpty
+                                ? authController.userName.value[0].toUpperCase()
+                                : 'J',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 24,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                  : Center(
+                      child: Text(
+                        authController.userName.value.isNotEmpty
+                            ? authController.userName.value[0].toUpperCase()
+                            : 'J',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 24,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                    ),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -328,7 +350,7 @@ class AccountView extends StatelessWidget {
             size: 20,
           ),
           'bank_accounts'.tr,
-          () => Get.to(() => const BankAccountsView()),
+          () => Get.to(() => BankAccountsView()),
         ),
       ],
     );

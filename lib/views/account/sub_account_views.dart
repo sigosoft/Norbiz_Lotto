@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../configs/theme.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/account_controller.dart';
@@ -120,9 +122,7 @@ class AccountInfoView extends StatelessWidget {
     final dobController = TextEditingController(
       text: authController.userDob.value,
     );
-    final passwordController = TextEditingController(text: '123456789');
     var genderVal = authController.userGender.value.obs;
-    var obscurePassword = true.obs;
 
     final customHeaderRow = Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
@@ -289,28 +289,6 @@ class AccountInfoView extends StatelessWidget {
                             label: 'Email',
                             controller: emailController,
                             keyboardType: TextInputType.emailAddress,
-                          ),
-                          const SizedBox(height: 16),
-
-                          Obx(
-                            () => _buildTextField(
-                              label: 'Password',
-                              controller: passwordController,
-                              obscureText: obscurePassword.value,
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  obscurePassword.value
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                  color: const Color(0xFF94A3B8),
-                                  size: 20,
-                                ),
-                                onPressed: () {
-                                  obscurePassword.value =
-                                      !obscurePassword.value;
-                                },
-                              ),
-                            ),
                           ),
                           const SizedBox(height: 32),
 
@@ -574,18 +552,41 @@ class EditAccountInfoView extends StatelessWidget {
     final lastNameController = TextEditingController(
       text: nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '',
     );
-    final phoneController = TextEditingController(
-      text: authController.userPhone.value,
-    );
+    String initialPhone = authController.userMobileRaw.value;
+    if (initialPhone.isEmpty) {
+      final phone = authController.userPhone.value.trim();
+      if (phone.startsWith('+')) {
+        final spaceIndex = phone.indexOf(' ');
+        if (spaceIndex != -1) {
+          initialPhone = phone.substring(spaceIndex + 1).trim();
+        } else {
+          String cleaned = phone.replaceFirst('+', '');
+          final dialCodeNoPlus = authController.selectedCountryDialCode.value
+              .replaceFirst('+', '');
+          if (cleaned.startsWith(dialCodeNoPlus)) {
+            initialPhone = cleaned.substring(dialCodeNoPlus.length).trim();
+          } else {
+            initialPhone = cleaned;
+          }
+        }
+      } else {
+        initialPhone = phone;
+      }
+    }
+    final phoneController = TextEditingController(text: initialPhone);
     final emailController = TextEditingController(
       text: authController.userEmail.value,
     );
     final dobController = TextEditingController(
       text: authController.userDob.value,
     );
-    final passwordController = TextEditingController(text: '123456789');
-    var genderVal = authController.userGender.value.obs;
-    var obscurePassword = false.obs;
+    final String initialGender = authController.userGender.value;
+    final String defaultGender =
+        (initialGender.toLowerCase() == 'female' ||
+            initialGender.toLowerCase() == 'femelle')
+        ? 'Female'
+        : 'Male';
+    var genderVal = defaultGender.obs;
 
     return Obx(() {
       final textDirection = localizationController.textDirection;
@@ -600,129 +601,216 @@ class EditAccountInfoView extends StatelessWidget {
               gradient: AppTheme.pageBackgroundGradient,
             ),
             child: SafeArea(
-              child: Column(
+              child: Stack(
                 children: [
-                  // Header Row
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 12.0,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        GestureDetector(
-                          onTap: () => Get.back(),
-                          child: Container(
-                            height: 38,
-                            width: 38,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.chevron_left_rounded,
-                              color: Color(0xFF0F172A),
-                              size: 24,
-                            ),
-                          ),
+                  Column(
+                    children: [
+                      // Header Row
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 12.0,
                         ),
-                        const Text(
-                          'Edit Information',
-                          style: TextStyle(
-                            color: Color(0xFF0F172A),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                        const SizedBox(width: 38),
-                      ],
-                    ),
-                  ),
-                  // Scrollable Form
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildTextField(
-                            label: 'First Name',
-                            controller: firstNameController,
-                          ),
-                          const SizedBox(height: 16),
-                          _buildTextField(
-                            label: 'Last Name',
-                            controller: lastNameController,
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Gender',
-                                      style: TextStyle(
-                                        color: Color(0xFF94A3B8),
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            GestureDetector(
+                              onTap: () => Get.back(),
+                              child: Container(
+                                height: 38,
+                                width: 38,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
                                     ),
-                                    const SizedBox(height: 8),
-                                    Obx(
-                                      () => Container(
-                                        height: 48,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(
-                                            12,
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.chevron_left_rounded,
+                                  color: Color(0xFF0F172A),
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                            const Text(
+                              'Edit Information',
+                              style: TextStyle(
+                                color: Color(0xFF0F172A),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 38),
+                          ],
+                        ),
+                      ),
+                      // Scrollable Form
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Center(
+                                child: Stack(
+                                  children: [
+                                    Obx(() {
+                                      final localPath = authController
+                                          .selectedImagePath
+                                          .value;
+                                      final remoteUrl =
+                                          authController.userImageUrl.value;
+                                      final name =
+                                          authController.userName.value;
+
+                                      Widget imageWidget;
+                                      if (localPath.isNotEmpty) {
+                                        imageWidget = ClipOval(
+                                          child: Image.file(
+                                            File(localPath),
+                                            width: 90,
+                                            height: 90,
+                                            fit: BoxFit.cover,
                                           ),
-                                          border: Border.all(
-                                            color: const Color(0xFFE2E8F0),
-                                            width: 1.0,
+                                        );
+                                      } else if (remoteUrl.isNotEmpty) {
+                                        imageWidget = ClipOval(
+                                          child: Image.network(
+                                            remoteUrl,
+                                            width: 90,
+                                            height: 90,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                                  return Container(
+                                                    width: 90,
+                                                    height: 90,
+                                                    color: const Color(
+                                                      0xFFFFD15B,
+                                                    ),
+                                                    alignment: Alignment.center,
+                                                    child: Text(
+                                                      name.isNotEmpty
+                                                          ? name[0]
+                                                                .toUpperCase()
+                                                          : 'J',
+                                                      style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 32,
+                                                        color: Color(
+                                                          0xFF1E293B,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
                                           ),
-                                        ),
-                                        alignment: Alignment.center,
-                                        child: DropdownButtonHideUnderline(
-                                          child: DropdownButton<String>(
-                                            value: genderVal.value,
-                                            isExpanded: true,
-                                            icon: const Icon(
-                                              Icons.keyboard_arrow_down_rounded,
-                                              color: Color(0xFF0F172A),
-                                            ),
+                                        );
+                                      } else {
+                                        imageWidget = Container(
+                                          width: 90,
+                                          height: 90,
+                                          decoration: const BoxDecoration(
+                                            color: Color(0xFFFFD15B),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            name.isNotEmpty
+                                                ? name[0].toUpperCase()
+                                                : 'J',
                                             style: const TextStyle(
-                                              color: Color(0xFF0F172A),
-                                              fontSize: 14,
                                               fontWeight: FontWeight.bold,
+                                              fontSize: 32,
+                                              color: Color(0xFF1E293B),
                                             ),
-                                            items: const [
-                                              DropdownMenuItem(
-                                                value: 'Male',
-                                                child: Text('Male'),
-                                              ),
-                                              DropdownMenuItem(
-                                                value: 'Female',
-                                                child: Text('Female'),
+                                          ),
+                                        );
+                                      }
+
+                                      return GestureDetector(
+                                        onTap: () async {
+                                          try {
+                                            final picker = ImagePicker();
+                                            final image = await picker
+                                                .pickImage(
+                                                  source: ImageSource.gallery,
+                                                );
+                                            if (image != null) {
+                                              authController
+                                                      .selectedImagePath
+                                                      .value =
+                                                  image.path;
+                                            }
+                                          } catch (e) {
+                                            debugPrint(
+                                              'Error picking image: $e',
+                                            );
+                                          }
+                                        },
+                                        child: Container(
+                                          width: 90,
+                                          height: 90,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.white,
+                                              width: 3,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withOpacity(
+                                                  0.1,
+                                                ),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 4),
                                               ),
                                             ],
-                                            onChanged: (val) {
-                                              if (val != null)
-                                                genderVal.value = val;
-                                            },
+                                          ),
+                                          child: imageWidget,
+                                        ),
+                                      );
+                                    }),
+                                    Positioned(
+                                      bottom: 0,
+                                      right: 0,
+                                      child: GestureDetector(
+                                        onTap: () async {
+                                          try {
+                                            final picker = ImagePicker();
+                                            final image = await picker
+                                                .pickImage(
+                                                  source: ImageSource.gallery,
+                                                );
+                                            if (image != null) {
+                                              authController
+                                                      .selectedImagePath
+                                                      .value =
+                                                  image.path;
+                                            }
+                                          } catch (e) {
+                                            debugPrint(
+                                              'Error picking image: $e',
+                                            );
+                                          }
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: const BoxDecoration(
+                                            color: AppTheme.primaryOrange,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.camera_alt,
+                                            color: Colors.white,
+                                            size: 16,
                                           ),
                                         ),
                                       ),
@@ -730,90 +818,167 @@ class EditAccountInfoView extends StatelessWidget {
                                   ],
                                 ),
                               ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: _buildTextField(
-                                  label: 'Date of Birth',
-                                  controller: dobController,
+                              const SizedBox(height: 24),
+                              _buildTextField(
+                                label: 'First Name',
+                                controller: firstNameController,
+                              ),
+                              const SizedBox(height: 16),
+                              _buildTextField(
+                                label: 'Last Name',
+                                controller: lastNameController,
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Gender',
+                                          style: TextStyle(
+                                            color: Color(0xFF94A3B8),
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Obx(
+                                          () => Container(
+                                            height: 48,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: const Color(0xFFE2E8F0),
+                                                width: 1.0,
+                                              ),
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: DropdownButtonHideUnderline(
+                                              child: DropdownButton<String>(
+                                                value: genderVal.value,
+                                                isExpanded: true,
+                                                icon: const Icon(
+                                                  Icons
+                                                      .keyboard_arrow_down_rounded,
+                                                  color: Color(0xFF0F172A),
+                                                ),
+                                                style: const TextStyle(
+                                                  color: Color(0xFF0F172A),
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                                items: const [
+                                                  DropdownMenuItem(
+                                                    value: 'Male',
+                                                    child: Text('Male'),
+                                                  ),
+                                                  DropdownMenuItem(
+                                                    value: 'Female',
+                                                    child: Text('Female'),
+                                                  ),
+                                                ],
+                                                onChanged: (val) {
+                                                  if (val != null)
+                                                    genderVal.value = val;
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: _buildTextField(
+                                      label: 'Date of Birth',
+                                      controller: dobController,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              _buildTextField(
+                                label: 'Phone Number',
+                                controller: phoneController,
+                                keyboardType: TextInputType.phone,
+                              ),
+                              const SizedBox(height: 16),
+                              _buildTextField(
+                                label: 'Email',
+                                controller: emailController,
+                                keyboardType: TextInputType.emailAddress,
+                              ),
+                              const SizedBox(height: 32),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 48,
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    final success = await authController
+                                        .updateProfile(
+                                          firstNameController.text,
+                                          lastNameController.text,
+                                          phoneController.text,
+                                          emailController.text,
+                                          genderVal.value,
+                                          dobController.text,
+                                        );
+                                    if (success) {
+                                      Get.back();
+                                      showToast(
+                                        'Profile updated successfully.'.tr,
+                                        title: 'Success',
+                                      );
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFFE9900),
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(24),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: const Text(
+                                    'Update',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
                                 ),
                               ),
+                              const SizedBox(height: 24),
                             ],
                           ),
-                          const SizedBox(height: 16),
-                          _buildTextField(
-                            label: 'Phone Number',
-                            controller: phoneController,
-                            keyboardType: TextInputType.phone,
-                          ),
-                          const SizedBox(height: 16),
-                          _buildTextField(
-                            label: 'Email',
-                            controller: emailController,
-                            keyboardType: TextInputType.emailAddress,
-                          ),
-                          const SizedBox(height: 16),
-                          Obx(
-                            () => _buildTextField(
-                              label: 'Password',
-                              controller: passwordController,
-                              obscureText: obscurePassword.value,
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  obscurePassword.value
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                  color: const Color(0xFF94A3B8),
-                                  size: 20,
-                                ),
-                                onPressed: () {
-                                  obscurePassword.value =
-                                      !obscurePassword.value;
-                                },
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 32),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 48,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                authController.updateProfile(
-                                  firstNameController.text,
-                                  lastNameController.text,
-                                  phoneController.text,
-                                  emailController.text,
-                                  genderVal.value,
-                                  dobController.text,
-                                );
-                                Get.back();
-                                showToast(
-                                  'Profile updated successfully.'.tr,
-                                  title: 'Success',
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFFE9900),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: const Text(
-                                'Update',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
+                  Obx(() {
+                    if (authController.isLoading.value) {
+                      return Positioned.fill(
+                        child: Container(
+                          color: Colors.white.withOpacity(0.3),
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFFE9900),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  }),
                 ],
               ),
             ),
@@ -1162,7 +1327,11 @@ class TransactionsView extends StatelessWidget {
 // 3. Bank Accounts / Withdrawal Targets
 // ------------------------------------------------------------
 class BankAccountsView extends StatelessWidget {
-  const BankAccountsView({Key? key}) : super(key: key);
+  BankAccountsView({Key? key}) : super(key: key) {
+    try {
+      Get.find<AccountController>().fetchBankAccounts();
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1211,6 +1380,55 @@ class BankAccountsView extends StatelessWidget {
       ),
     );
 
+    final addAccountButton = GestureDetector(
+      onTap: () => Get.to(() => const AddBankAccountView()),
+      child: DashedBorderContainer(
+        borderRadius: 16,
+        color: const Color(0xFFCBD5E1),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            vertical: 28,
+            horizontal: 16,
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF3FD),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Image.asset(
+                  "lib/assets/images/AddAccount.png",
+                  width: 28,
+                  height: 28,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'add_bank'.tr,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryDarkBlue,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'withdraw_desc'.tr,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.grey,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
     return Obx(() {
       final textDirection = localizationController.textDirection;
 
@@ -1229,14 +1447,26 @@ class BankAccountsView extends StatelessWidget {
                 children: [
                   customHeaderRow,
                   Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Accounts List
-                          Obx(
-                            () => ListView.separated(
+                    child: Obx(() {
+                      if (accountController.isBankLoading.value) {
+                        return const Center(
+                          child: CircularProgressIndicator(color: Color(0xFFFE9900)),
+                        );
+                      }
+
+                      if (accountController.savedAccounts.isEmpty) {
+                        return SingleChildScrollView(
+                          padding: const EdgeInsets.all(16),
+                          child: addAccountButton,
+                        );
+                      }
+
+                      return SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ListView.separated(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: accountController.savedAccounts.length,
@@ -1378,63 +1608,12 @@ class BankAccountsView extends StatelessWidget {
                                 );
                               },
                             ),
-                          ),
-
-                          const SizedBox(height: 150),
-
-                          // Add another account container with dashed border
-                          GestureDetector(
-                            onTap: () =>
-                                Get.to(() => const AddBankAccountView()),
-                            child: DashedBorderContainer(
-                              borderRadius: 16,
-                              color: const Color(0xFFCBD5E1),
-                              child: Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 28,
-                                  horizontal: 16,
-                                ),
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFEFF3FD),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Image.asset(
-                                        "lib/assets/images/AddAccount.png",
-                                        width: 28,
-                                        height: 28,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 10),
-                                    Text(
-                                      'add_bank'.tr,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: AppTheme.primaryDarkBlue,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'withdraw_desc'.tr,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        color: Colors.grey,
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                            const SizedBox(height: 150),
+                            addAccountButton,
+                          ],
+                        ),
+                      );
+                    }),
                   ),
                 ],
               ),
@@ -1769,30 +1948,1135 @@ class AddBankAccountView extends StatelessWidget {
 // ------------------------------------------------------------
 // 4. Policy (Privacy, Terms, Anti-Fraud, Under-18) HTML mock
 // ------------------------------------------------------------
-class PolicyView extends StatelessWidget {
+class PolicyView extends StatefulWidget {
   final String policyType;
 
   const PolicyView({Key? key, required this.policyType}) : super(key: key);
 
   @override
+  State<PolicyView> createState() => _PolicyViewState();
+}
+
+class _PolicyViewState extends State<PolicyView> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.policyType == 'privacy') {
+      try {
+        Get.find<AccountController>().fetchPrivacyPolicy();
+      } catch (_) {}
+    } else if (widget.policyType == 'terms') {
+      try {
+        Get.find<AccountController>().fetchTermsAndConditions();
+      } catch (_) {}
+    } else if (widget.policyType == 'fraud') {
+      try {
+        Get.find<AccountController>().fetchAntiFraudPolicy();
+      } catch (_) {}
+    } else if (widget.policyType == 'age') {
+      try {
+        Get.find<AccountController>().fetchUnder18ProtectionPolicy();
+      } catch (_) {}
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final localizationController = Get.find<LocalizationController>();
-    final Widget view;
-    if (policyType == 'privacy') {
-      view = _buildPrivacyPolicy(context);
-    } else if (policyType == 'terms') {
-      view = _buildTermsAndConditions(context);
-    } else if (policyType == 'fraud') {
-      view = _buildAntiFraudPolicy(context);
-    } else {
-      view = _buildUnder18Policy(context);
-    }
 
     return Obx(() {
       final textDirection = localizationController.textDirection;
-
+      final Widget view;
+      if (widget.policyType == 'privacy') {
+        view = _buildPrivacyPolicyDynamic(context, localizationController);
+      } else if (widget.policyType == 'terms') {
+        view = _buildTermsAndConditionsDynamic(context, localizationController);
+      } else if (widget.policyType == 'fraud') {
+        view = _buildAntiFraudPolicyDynamic(context, localizationController);
+      } else if (widget.policyType == 'age') {
+        view = _buildUnder18PolicyDynamic(context, localizationController);
+      } else {
+        view = _buildUnder18Policy(context);
+      }
       return Directionality(textDirection: textDirection, child: view);
     });
+  }
+
+  /// Strips HTML tags from a string and returns plain text.
+  String _stripHtml(String html) {
+    return html
+        .replaceAll(RegExp(r'<[^>]*>'), '')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&#39;', "'")
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll(RegExp(r'\n{3,}'), '\n\n')
+        .trim();
+  }
+
+  /// Parses an HTML string into a list of sections.
+  /// Each section has a [heading] (from <h3>) and [items] (from <li>).
+  /// Text between headings with no <li> becomes a [paragraph].
+  List<Map<String, dynamic>> _parseSections(String html) {
+    final sections = <Map<String, dynamic>>[];
+
+    // Split on <h3> tags
+    final h3Pattern = RegExp(r'<h3>(.*?)<\/h3>', dotAll: true);
+    final matches = h3Pattern.allMatches(html).toList();
+
+    // Text before first heading (intro paragraph)
+    final firstHeadingStart = matches.isEmpty
+        ? html.length
+        : matches.first.start;
+    final intro = _stripHtml(html.substring(0, firstHeadingStart)).trim();
+    if (intro.isNotEmpty) {
+      sections.add({'type': 'intro', 'text': intro});
+    }
+
+    for (int i = 0; i < matches.length; i++) {
+      final heading = _stripHtml(matches[i].group(1) ?? '');
+      final contentStart = matches[i].end;
+      final contentEnd = i + 1 < matches.length
+          ? matches[i + 1].start
+          : html.length;
+      final block = html.substring(contentStart, contentEnd);
+
+      // Extract <li> items
+      final liPattern = RegExp(r'<li>(.*?)<\/li>', dotAll: true);
+      final liMatches = liPattern.allMatches(block).toList();
+      if (liMatches.isNotEmpty) {
+        final items = liMatches.map((m) {
+          final raw = m.group(1) ?? '';
+          // Check for <strong> prefix
+          final strongMatch = RegExp(
+            r'<strong>(.*?)<\/strong>(.*)',
+            dotAll: true,
+          ).firstMatch(raw);
+          if (strongMatch != null) {
+            return {
+              'bold': _stripHtml(strongMatch.group(1) ?? ''),
+              'text': _stripHtml(strongMatch.group(2) ?? ''),
+            };
+          }
+          return {'bold': '', 'text': _stripHtml(raw)};
+        }).toList();
+        // Extract any paragraph text before/between the <ul>
+        final ulStart = block.indexOf('<ul>');
+        String? paraText;
+        if (ulStart > 0) {
+          paraText = _stripHtml(block.substring(0, ulStart)).trim();
+        }
+        sections.add({
+          'type': 'section',
+          'heading': heading,
+          'para': paraText?.isNotEmpty == true ? paraText : null,
+          'items': items,
+        });
+      } else {
+        // No list items — treat as paragraph section
+        final para = _stripHtml(block).trim();
+        sections.add({
+          'type': 'section',
+          'heading': heading,
+          'para': para.isNotEmpty ? para : null,
+          'items': <Map<String, dynamic>>[],
+        });
+      }
+    }
+
+    return sections;
+  }
+
+  Widget _buildPrivacyPolicyDynamic(
+    BuildContext context,
+    LocalizationController localizationController,
+  ) {
+    final accountController = Get.find<AccountController>();
+    final lang = localizationController.currentLanguage.value;
+
+    final title = lang == 'fr'
+        ? accountController.policyTitleFr.value
+        : lang == 'ht'
+        ? accountController.policyTitleHt.value
+        : accountController.policyTitleEn.value;
+
+    final content = lang == 'fr'
+        ? accountController.policyContentFr.value
+        : lang == 'ht'
+        ? accountController.policyContentHt.value
+        : accountController.policyContentEn.value;
+
+    final displayTitle = title.isNotEmpty ? title : 'Privacy Policy';
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Custom Header Row matching screen exactly
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 12.0,
+              ),
+              height: 62,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: GestureDetector(
+                      onTap: () => Get.back(),
+                      child: Container(
+                        height: 38,
+                        width: 38,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(0xFFE2E8F0),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.chevron_left_rounded,
+                          color: Color(0xFF0F172A),
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    displayTitle,
+                    style: const TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Obx(() {
+                if (accountController.isPolicyLoading.value) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Color(0xFFFE9900)),
+                  );
+                }
+
+                if (content.isEmpty &&
+                    !accountController.isPolicyLoading.value) {
+                  return _buildPrivacyPolicy(context);
+                }
+
+                final sections = _parseSections(content);
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ...sections.map((section) {
+                        if (section['type'] == 'intro') {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                section['text'] as String,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF475569),
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                            ],
+                          );
+                        }
+
+                        final heading = section['heading'] as String? ?? '';
+                        final para = section['para'] as String?;
+                        final items =
+                            (section['items'] as List<Map<String, dynamic>>?) ??
+                            [];
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionHeader(heading),
+                            if (para != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                para,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF475569),
+                                ),
+                              ),
+                            ],
+                            if (items.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              _buildCard(
+                                children: items.map<Widget>((item) {
+                                  final bold = item['bold'] as String? ?? '';
+                                  final text = item['text'] as String? ?? '';
+                                  if (bold.isNotEmpty) {
+                                    return _buildBulletItemWithBoldPrefix(
+                                      context,
+                                      '$bold: ',
+                                      text,
+                                    );
+                                  }
+                                  return _buildBulletItem(text);
+                                }).toList(),
+                              ),
+                            ],
+                            const SizedBox(height: 24),
+                          ],
+                        );
+                      }),
+                      // Static "Questions?" contact footer — unchanged
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 32,
+                          horizontal: 20,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF002C8B),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Column(
+                          children: [
+                            const Text(
+                              "Questions?",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 22,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              "Our team is available to assist you with any concerns.",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 20),
+                            GestureDetector(
+                              onTap: () {},
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFE9900),
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.mail_rounded,
+                                        color: Color(0xFFFE9900),
+                                        size: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      "support@norbizlotto.com",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTermsAndConditionsDynamic(
+    BuildContext context,
+    LocalizationController localizationController,
+  ) {
+    final accountController = Get.find<AccountController>();
+    final lang = localizationController.currentLanguage.value;
+
+    final title = lang == 'fr'
+        ? accountController.termsTitleFr.value
+        : lang == 'ht'
+        ? accountController.termsTitleHt.value
+        : accountController.termsTitleEn.value;
+
+    final content = lang == 'fr'
+        ? accountController.termsContentFr.value
+        : lang == 'ht'
+        ? accountController.termsContentHt.value
+        : accountController.termsContentEn.value;
+
+    final displayTitle = title.isNotEmpty ? title : 'Terms & Conditions';
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Custom Header Row matching screen exactly
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 12.0,
+              ),
+              height: 62,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: GestureDetector(
+                      onTap: () => Get.back(),
+                      child: Container(
+                        height: 38,
+                        width: 38,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(0xFFE2E8F0),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.chevron_left_rounded,
+                          color: Color(0xFF0F172A),
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    displayTitle,
+                    style: const TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Obx(() {
+                if (accountController.isTermsLoading.value) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Color(0xFFFE9900)),
+                  );
+                }
+
+                if (content.isEmpty &&
+                    !accountController.isTermsLoading.value) {
+                  return _buildTermsAndConditions(context);
+                }
+
+                final sections = _parseSections(content);
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ...sections.map((section) {
+                        if (section['type'] == 'intro') {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                section['text'] as String,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF475569),
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                            ],
+                          );
+                        }
+
+                        final heading = section['heading'] as String? ?? '';
+                        final para = section['para'] as String?;
+                        final items =
+                            (section['items'] as List<Map<String, dynamic>>?) ??
+                            [];
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionHeader(heading),
+                            if (para != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                para,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF475569),
+                                ),
+                              ),
+                            ],
+                            if (items.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              _buildCard(
+                                children: items.map<Widget>((item) {
+                                  final bold = item['bold'] as String? ?? '';
+                                  final text = item['text'] as String? ?? '';
+                                  if (bold.isNotEmpty) {
+                                    return _buildBulletItemWithBoldPrefix(
+                                      context,
+                                      '$bold: ',
+                                      text,
+                                    );
+                                  }
+                                  return _buildBulletItem(text);
+                                }).toList(),
+                              ),
+                            ],
+                            const SizedBox(height: 24),
+                          ],
+                        );
+                      }),
+                      const SizedBox(height: 32),
+                      // Static "Questions?" contact footer
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 32,
+                          horizontal: 20,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF002C8B),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Column(
+                          children: [
+                            const Text(
+                              "Questions?",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 22,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              "Our team is available to assist you with any concerns.",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 20),
+                            GestureDetector(
+                              onTap: () {
+                                // Optional email client launch trigger (handled cleanly)
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFE9900),
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.mail_rounded,
+                                        color: Color(0xFFFE9900),
+                                        size: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      "support@norbizlotto.com",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAntiFraudPolicyDynamic(
+    BuildContext context,
+    LocalizationController localizationController,
+  ) {
+    final accountController = Get.find<AccountController>();
+    final lang = localizationController.currentLanguage.value;
+
+    final title = lang == 'fr'
+        ? accountController.fraudTitleFr.value
+        : lang == 'ht'
+        ? accountController.fraudTitleHt.value
+        : accountController.fraudTitleEn.value;
+
+    final content = lang == 'fr'
+        ? accountController.fraudContentFr.value
+        : lang == 'ht'
+        ? accountController.fraudContentHt.value
+        : accountController.fraudContentEn.value;
+
+    final displayTitle = title.isNotEmpty ? title : 'Anti-Fraud Policy';
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Custom Header Row matching screen exactly
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 12.0,
+              ),
+              height: 62,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: GestureDetector(
+                      onTap: () => Get.back(),
+                      child: Container(
+                        height: 38,
+                        width: 38,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(0xFFE2E8F0),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.chevron_left_rounded,
+                          color: Color(0xFF0F172A),
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    displayTitle,
+                    style: const TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Obx(() {
+                if (accountController.isFraudLoading.value) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Color(0xFFFE9900)),
+                  );
+                }
+
+                if (content.isEmpty &&
+                    !accountController.isFraudLoading.value) {
+                  return _buildAntiFraudPolicy(context);
+                }
+
+                final sections = _parseSections(content);
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ...sections.map((section) {
+                        if (section['type'] == 'intro') {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                section['text'] as String,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF475569),
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                            ],
+                          );
+                        }
+
+                        final heading = section['heading'] as String? ?? '';
+                        final para = section['para'] as String?;
+                        final items =
+                            (section['items'] as List<Map<String, dynamic>>?) ??
+                            [];
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionHeader(heading),
+                            if (para != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                para,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF475569),
+                                ),
+                              ),
+                            ],
+                            if (items.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              _buildCard(
+                                children: items.map<Widget>((item) {
+                                  final bold = item['bold'] as String? ?? '';
+                                  final text = item['text'] as String? ?? '';
+                                  if (bold.isNotEmpty) {
+                                    return _buildBulletItemWithBoldPrefix(
+                                      context,
+                                      '$bold: ',
+                                      text,
+                                    );
+                                  }
+                                  return _buildBulletItem(text);
+                                }).toList(),
+                              ),
+                            ],
+                            const SizedBox(height: 24),
+                          ],
+                        );
+                      }),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 32,
+                          horizontal: 20,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF002C8B),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Column(
+                          children: [
+                            const Text(
+                              "Reporting Fraud",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 22,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              "Users may report suspicious activity to",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 20),
+                            GestureDetector(
+                              onTap: () {
+                                // Optional email client launch trigger (handled cleanly)
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFE9900),
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.mail_rounded,
+                                        color: Color(0xFFFE9900),
+                                        size: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      "support@norbizlotto.com",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUnder18PolicyDynamic(
+    BuildContext context,
+    LocalizationController localizationController,
+  ) {
+    final accountController = Get.find<AccountController>();
+    final lang = localizationController.currentLanguage.value;
+
+    final title = lang == 'fr'
+        ? accountController.under18TitleFr.value
+        : lang == 'ht'
+        ? accountController.under18TitleHt.value
+        : accountController.under18TitleEn.value;
+
+    final content = lang == 'fr'
+        ? accountController.under18ContentFr.value
+        : lang == 'ht'
+        ? accountController.under18ContentHt.value
+        : accountController.under18ContentEn.value;
+
+    final displayTitle = title.isNotEmpty ? title : 'Under-18 Protection';
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Custom Header Row matching screen exactly
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 12.0,
+              ),
+              height: 62,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: GestureDetector(
+                      onTap: () => Get.back(),
+                      child: Container(
+                        height: 38,
+                        width: 38,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(0xFFE2E8F0),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.chevron_left_rounded,
+                          color: Color(0xFF0F172A),
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    displayTitle,
+                    style: const TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Obx(() {
+                if (accountController.isUnder18Loading.value) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Color(0xFFFE9900)),
+                  );
+                }
+
+                if (content.isEmpty &&
+                    !accountController.isUnder18Loading.value) {
+                  return _buildUnder18Policy(context);
+                }
+
+                final sections = _parseSections(content);
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ...sections.map((section) {
+                        if (section['type'] == 'intro') {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                section['text'] as String,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF475569),
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                            ],
+                          );
+                        }
+
+                        final heading = section['heading'] as String? ?? '';
+                        final para = section['para'] as String?;
+                        final items =
+                            (section['items'] as List<Map<String, dynamic>>?) ??
+                            [];
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionHeader(heading),
+                            if (para != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                para,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF475569),
+                                ),
+                              ),
+                            ],
+                            if (items.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              _buildCard(
+                                children: items.map<Widget>((item) {
+                                  final bold = item['bold'] as String? ?? '';
+                                  final text = item['text'] as String? ?? '';
+                                  if (bold.isNotEmpty) {
+                                    return _buildBulletItemWithBoldPrefix(
+                                      context,
+                                      '$bold: ',
+                                      text,
+                                    );
+                                  }
+                                  return _buildBulletItem(text);
+                                }).toList(),
+                              ),
+                            ],
+                            const SizedBox(height: 24),
+                          ],
+                        );
+                      }),
+                      const SizedBox(height: 32),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 32,
+                          horizontal: 20,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF002C8B),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Column(
+                          children: [
+                            const Text(
+                              "Reporting Fraud",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 22,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              "Users may report suspicious activity to",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 20),
+                            GestureDetector(
+                              onTap: () {
+                                // Optional email client launch trigger (handled cleanly)
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFE9900),
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.mail_rounded,
+                                        color: Color(0xFFFE9900),
+                                        size: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      "support@norbizlotto.com",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildPrivacyPolicy(BuildContext context) {

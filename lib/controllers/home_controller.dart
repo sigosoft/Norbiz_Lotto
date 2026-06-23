@@ -7,6 +7,8 @@ import '../configs/theme.dart';
 import '../configs/api_config.dart';
 import 'game_controller.dart';
 import 'localization_controller.dart';
+import 'auth_controller.dart';
+import 'bet_history_controller.dart';
 
 class HomeController extends GetxController {
   // Navigation
@@ -275,11 +277,21 @@ class HomeController extends GetxController {
 
   void changeNavIndex(int index) {
     currentNavIndex.value = index;
-    if (index == 3) {
+    if (index == 2) {
+      try {
+        if (Get.isRegistered<BetHistoryController>()) {
+          Get.find<BetHistoryController>().fetchBetHistory();
+        }
+      } catch (_) {}
+    } else if (index == 3) {
       try {
         final gameController = Get.find<GameController>();
         gameController.tchalaController.clear();
         gameController.tchalaSearchQuery.value = '';
+      } catch (_) {}
+    } else if (index == 4) {
+      try {
+        Get.find<AuthController>().fetchProfile();
       } catch (_) {}
     }
   }
