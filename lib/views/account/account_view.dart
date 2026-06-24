@@ -341,7 +341,10 @@ class AccountView extends StatelessWidget {
             size: 20,
           ),
           'transactions'.tr,
-          () => Get.to(() => const TransactionsView()),
+          () {
+            accountController.fetchTransactions();
+            Get.to(() => const TransactionsView());
+          },
         ),
         _buildShortcutItem(
           const ImageIcon(
@@ -565,6 +568,17 @@ class AccountView extends StatelessWidget {
                                       onTap: () => _showLanguageSelector(
                                         context,
                                         localizationController,
+                                      ),
+                                    ),
+                                    _buildMenuItem(
+                                      leading: Image.asset(
+                                        "lib/assets/images/change password.png",
+                                        width: 24,
+                                        height: 24,
+                                      ),
+                                      title: 'Change Password'.tr,
+                                      onTap: () => Get.to(
+                                        () => const ChangePasswordView(),
                                       ),
                                     ),
                                     _buildMenuItem(
@@ -1003,7 +1017,7 @@ class AccountView extends StatelessWidget {
               }
             },
             style: ElevatedButton.styleFrom(minimumSize: const Size(80, 38)),
-            child: const Text('Deposit'),
+            child: Text('Deposit'.tr),
           ),
         ],
       ),
@@ -1022,7 +1036,7 @@ class AccountView extends StatelessWidget {
         content: TextField(
           controller: amountController,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(hintText: 'Enter Amount (\$USD)'),
+          decoration: InputDecoration(hintText: 'Enter Amount (\$USD)'.tr),
         ),
         actions: [
           TextButton(
@@ -1042,7 +1056,7 @@ class AccountView extends StatelessWidget {
               }
             },
             style: ElevatedButton.styleFrom(minimumSize: const Size(80, 38)),
-            child: const Text('Withdraw'),
+            child: Text('Withdraw'.tr),
           ),
         ],
       ),

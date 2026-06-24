@@ -14,6 +14,26 @@ class BetHistoryView extends StatelessWidget {
     final historyController = Get.put(BetHistoryController());
     final localizationController = Get.find<LocalizationController>();
 
+    String formatCurrency(double val, String? currency) {
+      if (currency != null && currency.isNotEmpty) {
+        if (currency == 'USD') {
+          return '\$${val.toStringAsFixed(2)}';
+        }
+        return '${val.toStringAsFixed(2)} $currency';
+      }
+      return '\$${val.toStringAsFixed(2)}';
+    }
+
+    String formatCurrencyInt(int val, String? currency) {
+      if (currency != null && currency.isNotEmpty) {
+        if (currency == 'USD') {
+          return '\$$val';
+        }
+        return '$val $currency';
+      }
+      return '\$$val';
+    }
+
     final emptyWidget = Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
@@ -229,13 +249,19 @@ class BetHistoryView extends StatelessWidget {
 
                           // Determine status colors/labels
                           Color statusColor = const Color(0xFFFE9900);
-                          String statusLabel = 'PENDING';
+                          String statusLabel = ticket.statusLabel != null && ticket.statusLabel!.isNotEmpty
+                              ? ticket.statusLabel!.toUpperCase()
+                              : 'PENDING';
                           if (ticket.status == TicketStatus.won) {
                             statusColor = const Color(0xFF10B981);
-                            statusLabel = 'WIN';
+                            if (ticket.statusLabel == null || ticket.statusLabel!.isEmpty) {
+                              statusLabel = 'WIN';
+                            }
                           } else if (ticket.status == TicketStatus.lost) {
                             statusColor = const Color(0xFFEF4444);
-                            statusLabel = 'LOSS';
+                            if (ticket.statusLabel == null || ticket.statusLabel!.isEmpty) {
+                              statusLabel = 'LOSS';
+                            }
                           }
 
                           // Split ticket numbers by comma or space
@@ -306,7 +332,7 @@ class BetHistoryView extends StatelessWidget {
                                                 ),
                                               ),
                                               Text(
-                                                '\$${ticket.betAmount.toInt()}',
+                                                formatCurrencyInt(ticket.betAmount.toInt(), ticket.currency),
                                                 style: const TextStyle(
                                                   fontWeight: FontWeight.bold,
                                                   color:
@@ -409,7 +435,7 @@ class BetHistoryView extends StatelessWidget {
                                                   TicketStatus.won &&
                                               ticket.winAmount != null)
                                             Text(
-                                              '+\$${ticket.winAmount!.toStringAsFixed(2)}',
+                                              '+${formatCurrency(ticket.winAmount!, ticket.currency)}',
                                               style: const TextStyle(
                                                 color: Color(0xFF10B981),
                                                 fontWeight: FontWeight.bold,
@@ -419,7 +445,7 @@ class BetHistoryView extends StatelessWidget {
                                           else if (ticket.status ==
                                               TicketStatus.lost)
                                             Text(
-                                              '-\$${ticket.betAmount.toInt()}',
+                                              '-${formatCurrencyInt(ticket.betAmount.toInt(), ticket.currency)}',
                                               style: const TextStyle(
                                                 color: Color(0xFFEF4444),
                                                 fontWeight: FontWeight.bold,

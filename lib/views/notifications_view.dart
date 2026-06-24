@@ -39,9 +39,9 @@ class NotificationsView extends StatelessWidget {
               ),
             ),
           ),
-          const Text(
-            'Notifications',
-            style: TextStyle(
+          Text(
+            'Notifications'.tr,
+            style: const TextStyle(
               color: Color(0xFF0F172A),
               fontWeight: FontWeight.bold,
               fontSize: 18,
@@ -103,9 +103,9 @@ class NotificationsView extends StatelessWidget {
                                           ),
                                           elevation: 0,
                                         ),
-                                        child: const Text(
-                                          'Back to Home',
-                                          style: TextStyle(
+                                        child: Text(
+                                          'back_home'.tr,
+                                          style: const TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 15,
                                           ),

@@ -139,10 +139,10 @@ class ResultsView extends StatelessWidget {
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: const [
+                              children: [
                                 Text(
-                                  'All Lottery',
-                                  style: TextStyle(
+                                  'All Lottery'.tr,
+                                  style: const TextStyle(
                                     color: AppTheme.primaryDarkBlue,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
@@ -276,8 +276,8 @@ class ResultsView extends StatelessWidget {
                     child: Obx(() {
                       final list = resultsController.filteredResults;
                       if (list.isEmpty) {
-                        return const Center(
-                          child: Text('No draw results for this selection.'),
+                        return Center(
+                          child: Text('No draw results for this selection.'.tr),
                         );
                       }
 
@@ -303,7 +303,7 @@ class ResultsView extends StatelessWidget {
                                     bottom: 12.0,
                                   ),
                                   child: Text(
-                                    '${item.title} Draw – ${resultsController.formattedSelectedDate}',
+                                    '${item.title} ${'draw'.tr} – ${resultsController.formattedSelectedDate}',
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -374,13 +374,13 @@ class ResultsView extends StatelessWidget {
                                       ],
                                     ),
                                     const SizedBox(height: 12),
-                                    const Text(
-                                      'Draw Result',
-                                      style: TextStyle(
-                                        color: Color(0xFF707E94),
-                                        fontSize: 11,
-                                      ),
-                                    ),
+                                     Text(
+                                       'Draw Result'.tr,
+                                       style: const TextStyle(
+                                         color: Color(0xFF707E94),
+                                         fontSize: 11,
+                                       ),
+                                     ),
                                     const SizedBox(height: 6),
                                     Row(
                                       children: item.drawNumbers
@@ -390,13 +390,13 @@ class ResultsView extends StatelessWidget {
                                           .toList(),
                                     ),
                                     const SizedBox(height: 12),
-                                    const Text(
-                                      'Winning',
-                                      style: TextStyle(
-                                        color: Color(0xFF707E94),
-                                        fontSize: 11,
-                                      ),
-                                    ),
+                                     Text(
+                                       'Winning'.tr,
+                                       style: const TextStyle(
+                                         color: Color(0xFF707E94),
+                                         fontSize: 11,
+                                       ),
+                                     ),
                                     const SizedBox(height: 6),
                                     Row(
                                       children: item.winningNumbers

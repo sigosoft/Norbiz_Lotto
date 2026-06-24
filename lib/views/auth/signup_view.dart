@@ -609,7 +609,9 @@ class SignUpView extends StatelessWidget {
                                                         await authController
                                                             .register();
                                                     if (success) {
-                                                      Get.find<HomeController>().currentNavIndex.value = 0;
+                                                      final homeController = Get.find<HomeController>();
+                                                      homeController.currentNavIndex.value = 0;
+                                                      homeController.fetchHomeData();
                                                       Get.offAll(
                                                         () =>
                                                             const MainNavigationView(),

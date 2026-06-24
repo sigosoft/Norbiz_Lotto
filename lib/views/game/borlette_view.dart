@@ -78,11 +78,11 @@ class BorletteView extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   title: Text(game.name),
-                  content: Text('Payout rate details:\n${game.payout}'),
+                  content: Text('payout_rate_details'.trParams({'payout': game.payout})),
                   actions: [
                     TextButton(
                       onPressed: () => Get.back(),
-                      child: const Text('OK'),
+                      child: Text('ok'.tr),
                     ),
                   ],
                 ),
@@ -482,30 +482,8 @@ class BorletteView extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
-                      final String selectedNumbers =
-                          gameController.selectedNumbers.value;
-                      int requiredLen = game.category == '2D'
-                          ? 2
-                          : game.category == '3D'
-                          ? 3
-                          : game.category == '4D'
-                          ? 4
-                          : game.category == '5D'
-                          ? 5
-                          : (game.category == '2 C' ||
-                                game.category == '2 combo')
-                          ? 4
-                          : 4;
-
-                      if (selectedNumbers.length < requiredLen) {
-                        showToast(
-                          'Please enter a number first.'.tr,
-                          title: 'Error',
-                        );
-                        return;
-                      }
-                      gameController.isQuickPicked.value = true;
+                    onPressed: () async {
+                      await gameController.performQuickPick();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryOrange,
@@ -797,11 +775,10 @@ class BorletteView extends StatelessWidget {
                       );
                       return;
                     }
-                    if (amount < game.minBet) {
+                     if (amount < game.minBet) {
                       debugPrint('Validation failed: amount < minBet');
                       showToast(
-                        'Minimum bet amount is \$${game.minBet.toStringAsFixed(2)}.'
-                            .tr,
+                        'Minimum bet amount is \$@min.'.trParams({'min': game.minBet.toStringAsFixed(2)}),
                         title: 'Error',
                       );
                       return;
@@ -809,8 +786,7 @@ class BorletteView extends StatelessWidget {
                     if (amount > game.maxBet) {
                       debugPrint('Validation failed: amount > maxBet');
                       showToast(
-                        'Maximum bet amount is \$${game.maxBet.toStringAsFixed(2)}.'
-                            .tr,
+                        'Maximum bet amount is \$@max.'.trParams({'max': game.maxBet.toStringAsFixed(2)}),
                         title: 'Error',
                       );
                       return;
@@ -912,7 +888,7 @@ class BorletteView extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     String selectedNumbers =
                         gameController.selectedNumbers.value;
                     int requiredLen = game.category == '2D'
@@ -945,40 +921,103 @@ class BorletteView extends StatelessWidget {
                       );
                       return;
                     }
-                    if (amount < game.minBet) {
+                     if (amount < game.minBet) {
                       showToast(
-                        'Minimum bet amount is \$${game.minBet.toStringAsFixed(2)}.'
-                            .tr,
+                        'Minimum bet amount is \$@min.'.trParams({'min': game.minBet.toStringAsFixed(2)}),
                         title: 'Error',
                       );
                       return;
                     }
                     if (amount > game.maxBet) {
                       showToast(
-                        'Maximum bet amount is \$${game.maxBet.toStringAsFixed(2)}.'
-                            .tr,
+                        'Maximum bet amount is \$@max.'.trParams({'max': game.maxBet.toStringAsFixed(2)}),
                         title: 'Error',
                       );
                       return;
                     }
 
                     if (gameController.validateBet(amount)) {
-                      cartController.clearCart();
-                      cartController.addTicket(game.name, selected, amount);
-                      final ticketId = cartController.cartTickets.first.id;
+                      // Determine drawId and gameTypeId
+                      int drawId = 1;
+                      if (game.rawBoardData != null) {
+                        final raw = game.rawBoardData!;
+                        final rawDrawId =
+                            raw['draw_id'] ??
+                            raw['draw_session_id'] ??
+                            raw['draw_session']?['id'] ??
+                            raw['id'];
+                        if (rawDrawId != null) {
+                          drawId = int.tryParse(rawDrawId.toString()) ?? 1;
+                        }
+                      }
 
-                      final totalAmount = cartController.total;
-                      // Execute checkout
-                      if (cartController.checkout()) {
+                      int gameTypeId = 1;
+                      if (game.rawBoardData != null &&
+                          game.rawBoardData!['game_type_id'] != null) {
+                        gameTypeId =
+                            int.tryParse(
+                              game.rawBoardData!['game_type_id'].toString(),
+                            ) ??
+                            1;
+                      } else {
+                        final name = game.id.toLowerCase();
+                        if (name.contains('borlette'))
+                          gameTypeId = 1;
+                        else if (name.contains('maryaj') ||
+                            name.contains('marriage'))
+                          gameTypeId = 2;
+                        else if (name.contains('3d') || name.contains('loto3'))
+                          gameTypeId = 3;
+                        else if (name.contains('4d') || name.contains('loto4'))
+                          gameTypeId = 4;
+                        else if (name.contains('5d') || name.contains('loto5'))
+                          gameTypeId = 5;
+                      }
+
+                      String numberPrimary = selectedNumbers;
+                      String numberSecondary = '';
+                      final isMaryaj =
+                          game.name.toLowerCase().contains('maryaj') ||
+                          game.name.toLowerCase().contains('marriage') ||
+                          game.id.toLowerCase().contains('maryaj') ||
+                          game.id.toLowerCase().contains('marriage');
+                      if (isMaryaj && selectedNumbers.length >= 4) {
+                        numberPrimary = selectedNumbers.substring(0, 2);
+                        numberSecondary = selectedNumbers.substring(2, 4);
+                      }
+
+                      final bool added = await cartController.addToCart(
+                        drawId: drawId,
+                        gameTypeId: gameTypeId,
+                        numberPrimary: numberPrimary,
+                        numberSecondary: numberSecondary,
+                        betAmount: amount,
+                      );
+
+                      if (!added) return;
+
+                      final result = await cartController.purchaseTicket(
+                        drawId: drawId,
+                        gameTypeId: gameTypeId,
+                        numberPrimary: numberPrimary,
+                        numberSecondary: numberSecondary,
+                        betAmount: amount,
+                      );
+
+                      if (result != null) {
+                        final String ticketCode = result['ticketCode'] ?? 'SUCCESS';
+                        final double totalAmount = result['totalAmount'] ?? (amount + 1.0);
+                        final ticketData = result['ticketData'];
+
                         Get.to(
                           () => BetSuccessView(
-                            ticketId: ticketId,
+                            ticketId: ticketCode,
                             gameName: game.name,
-                            betNumber: selected,
+                            betNumber: selectedNumbers,
                             amount: totalAmount,
+                            ticketData: ticketData,
                           ),
                         );
-                        cartController.clearCart();
                         gameController.clearSelection();
                       }
                     }
@@ -1065,6 +1104,31 @@ class BorletteView extends StatelessWidget {
       );
     }
 
+    Widget _buildCloseButton(VoidCallback onTap) {
+      return Expanded(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 4.0),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(28),
+            child: Container(
+              height: 52,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: const Color(0xFFCBD5E1),
+                borderRadius: BorderRadius.circular(28),
+              ),
+              child: const Icon(
+                Icons.close,
+                color: AppTheme.primaryOrange,
+                size: 22,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     Widget _buildEmptyButton() {
       return const Expanded(
         child: Padding(
@@ -1105,7 +1169,7 @@ class BorletteView extends StatelessWidget {
             ),
             Row(
               children: [
-                _buildEmptyButton(),
+                _buildCloseButton(() => gameController.activeTarget.value = 'none'),
                 _buildKeypadButton('0', () => gameController.pressKey('0')),
                 _buildBackspaceButton(gameController.pressBackspace),
               ],

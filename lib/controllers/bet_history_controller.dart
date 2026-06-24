@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ticket_model.dart';
 import '../configs/api_config.dart';
+import 'localization_controller.dart';
 
 class BetHistoryController extends GetxController {
   var activeFilter = 'All'.obs; // 'All', 'Pending', 'Won', 'Loss'
@@ -77,18 +78,51 @@ class BetHistoryController extends GetxController {
             if (rawBets is List) {
               for (var item in rawBets) {
                 if (item is Map) {
-                  final String id = item['ticket_id']?.toString() ?? item['id']?.toString() ?? '';
-                  final String gameName = item['game_name']?.toString() ?? item['game']?['name']?.toString() ?? '';
-                  final String numbers = item['numbers']?.toString() ?? item['number']?.toString() ?? '';
+                  String parsedId = item['ticket_code']?.toString() ?? item['ticket_id']?.toString() ?? item['id']?.toString() ?? '';
+                  if (parsedId.isNotEmpty && !parsedId.startsWith('#') && !parsedId.contains('-')) {
+                    parsedId = '#$parsedId';
+                  }
+
+                  final String lang = Get.isRegistered<LocalizationController>()
+                      ? Get.find<LocalizationController>().currentLanguage.value
+                      : 'en';
+
+                  String gameName = '';
+                  if (lang == 'fr') {
+                    gameName = item['game_name_fr']?.toString() ?? '';
+                  } else if (lang == 'ht') {
+                    gameName = item['game_name_ht']?.toString() ?? '';
+                  }
+                  if (gameName.isEmpty) {
+                    gameName = item['game_name_en']?.toString() ??
+                        item['game_name']?.toString() ??
+                        item['game']?['name']?.toString() ??
+                        '';
+                  }
+
+                  final String numbers = item['number_display']?.toString() ??
+                      item['number_primary']?.toString() ??
+                      item['numbers']?.toString() ??
+                      item['number']?.toString() ??
+                      '';
 
                   String displayDate = '';
-                  final rawDate = item['created_at']?.toString() ?? item['date']?.toString() ?? '';
-                  if (rawDate.isNotEmpty) {
-                    try {
-                      final parsed = DateTime.parse(rawDate);
-                      displayDate = DateFormat('MMM dd, yyyy • h:mm a').format(parsed.toLocal()).toUpperCase();
-                    } catch (_) {
-                      displayDate = rawDate;
+                  if (lang == 'fr') {
+                    displayDate = item['draw_label_fr']?.toString() ?? '';
+                  } else if (lang == 'ht') {
+                    displayDate = item['draw_label_ht']?.toString() ?? '';
+                  } else {
+                    displayDate = item['draw_label_en']?.toString() ?? '';
+                  }
+                  if (displayDate.isEmpty) {
+                    final rawDate = item['created_at']?.toString() ?? item['date']?.toString() ?? '';
+                    if (rawDate.isNotEmpty) {
+                      try {
+                        final parsed = DateTime.parse(rawDate);
+                        displayDate = DateFormat('MMM dd, yyyy • h:mm a').format(parsed.toLocal()).toUpperCase();
+                      } catch (_) {
+                        displayDate = rawDate;
+                      }
                     }
                   }
 
@@ -103,15 +137,29 @@ class BetHistoryController extends GetxController {
                     ticketStatus = TicketStatus.lost;
                   }
 
+                  final String currency = item['currency']?.toString() ?? '';
+
+                  String statusLabel = '';
+                  if (lang == 'fr') {
+                    statusLabel = item['status_label_fr']?.toString() ?? '';
+                  } else if (lang == 'ht') {
+                    statusLabel = item['status_label_ht']?.toString() ?? '';
+                  }
+                  if (statusLabel.isEmpty) {
+                    statusLabel = item['status_label_en']?.toString() ?? '';
+                  }
+
                   betsList.add(
                     TicketModel(
-                      id: id.startsWith('#') ? id : '#$id',
+                      id: parsedId,
                       gameName: gameName,
                       numbers: numbers,
                       date: displayDate,
                       betAmount: betAmount,
                       winAmount: winAmount,
                       status: ticketStatus,
+                      currency: currency,
+                      statusLabel: statusLabel,
                     ),
                   );
                 }

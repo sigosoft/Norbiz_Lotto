@@ -163,11 +163,14 @@ class SignInView extends StatelessWidget {
                                           ),
                                           const SizedBox(width: 8),
                                           GestureDetector(
-                                            onTap: () => authController.showCountryCodePicker(context),
+                                            onTap: () => authController
+                                                .showCountryCodePicker(context),
                                             behavior: HitTestBehavior.opaque,
                                             child: Obx(
                                               () => Text(
-                                                authController.selectedCountryDialCode.value,
+                                                authController
+                                                    .selectedCountryDialCode
+                                                    .value,
                                                 style: const TextStyle(
                                                   color: Color(0xFF2C2C2C),
                                                   fontWeight: FontWeight.bold,
@@ -340,24 +343,40 @@ class SignInView extends StatelessWidget {
                                               width: double.infinity,
                                               height: 40,
                                               child: ElevatedButton(
-                                                 onPressed: () async {
-                                                   if (authController.validateSignInForm()) {
-                                                     bool success = await authController.login();
-                                                     if (success) {
-                                                       Get.find<HomeController>().currentNavIndex.value = 0;
-                                                       Get.offAll(
-                                                         () => const MainNavigationView(),
-                                                       );
-                                                       Future.delayed(
-                                                         const Duration(milliseconds: 300),
-                                                         () => showToast(
-                                                           'You are logged in successfully.'.tr,
-                                                           title: 'Success',
-                                                         ),
-                                                       );
-                                                     }
-                                                   }
-                                                 },
+                                                onPressed: () async {
+                                                  if (authController
+                                                      .validateSignInForm()) {
+                                                    bool success =
+                                                        await authController
+                                                            .login();
+                                                    if (success) {
+                                                      final homeController =
+                                                          Get.find<
+                                                            HomeController
+                                                          >();
+                                                      homeController
+                                                              .currentNavIndex
+                                                              .value =
+                                                          0;
+                                                      homeController
+                                                          .fetchHomeData();
+                                                      Get.offAll(
+                                                        () =>
+                                                            const MainNavigationView(),
+                                                      );
+                                                      Future.delayed(
+                                                        const Duration(
+                                                          milliseconds: 300,
+                                                        ),
+                                                        () => showToast(
+                                                          'You are logged in successfully.'
+                                                              .tr,
+                                                          title: 'Success',
+                                                        ),
+                                                      );
+                                                    }
+                                                  }
+                                                },
                                                 style: ElevatedButton.styleFrom(
                                                   backgroundColor:
                                                       AppTheme.buttonOrange,

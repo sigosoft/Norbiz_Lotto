@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:norbiz_loto/views/auth/signin_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'home_controller.dart';
+import 'localization_controller.dart';
 import '../configs/toast.dart';
 import '../configs/api_config.dart';
 
@@ -172,11 +173,17 @@ class AuthController extends GetxController {
             userName.value = details['name'] ?? 'John Doe';
             userPhone.value = details['mobile'] ?? signInPhoneController.text;
             userEmail.value = details['email'] ?? '';
-            userMobileRaw.value = details['mobile']?.toString() ?? signInPhoneController.text;
+            userMobileRaw.value =
+                details['mobile']?.toString() ?? signInPhoneController.text;
 
             final String? token = details['token'];
             debugPrint('Authentication Token: $token');
             await saveSession(Map<String, dynamic>.from(details));
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString(
+              'user_password',
+              signInPasswordController.text,
+            );
           }
           return true;
         } else {
@@ -281,11 +288,17 @@ class AuthController extends GetxController {
                 '${signUpFirstNameController.text} ${signUpLastNameController.text}';
             userPhone.value = details['mobile'] ?? signUpPhoneController.text;
             userEmail.value = details['email'] ?? '';
-            userMobileRaw.value = details['mobile']?.toString() ?? signUpPhoneController.text;
+            userMobileRaw.value =
+                details['mobile']?.toString() ?? signUpPhoneController.text;
 
             final String? token = details['token'];
             debugPrint('Authentication Token: $token');
             await saveSession(Map<String, dynamic>.from(details));
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString(
+              'user_password',
+              signUpPasswordController.text,
+            );
           }
           return true;
         } else {
@@ -709,9 +722,11 @@ class AuthController extends GetxController {
       userEmail.value = '';
 
       try {
-        Get.find<HomeController>().currentNavIndex.value = 0;
+        final homeController = Get.find<HomeController>();
+        homeController.currentNavIndex.value = 0;
+        homeController.clearData();
       } catch (e) {
-        debugPrint('Error resetting navigation index: $e');
+        debugPrint('Error resetting navigation index or clearing data: $e');
       }
 
       Get.offAll(() => const SignInView());
@@ -876,5 +891,264 @@ class AuthController extends GetxController {
     } catch (e) {
       debugPrint('Error fetching profile: $e');
     }
+  }
+
+  Future<void> fetchWallet() async {
+    try {
+      final connect = GetConnect();
+      connect.timeout = const Duration(seconds: 15);
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      final Map<String, String> headers = {};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final String url = '${ApiConfig.baseUrl}${ApiConfig.wallet}';
+      debugPrint('=== FETCH WALLET API CALL ===');
+      debugPrint('URL: $url');
+      debugPrint('Token: $token');
+      debugPrint('Headers: $headers');
+
+      final response = await connect.get(url, headers: headers);
+
+      debugPrint('=== FETCH WALLET RESPONSE ===');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 200 && response.body != null) {
+        final dynamic resData = response.body;
+        Map<String, dynamic> dataMap;
+        if (resData is String) {
+          dataMap = Map<String, dynamic>.from(jsonDecode(resData));
+        } else if (resData is Map) {
+          dataMap = Map<String, dynamic>.from(resData);
+        } else {
+          debugPrint('Unexpected response body type: ${resData.runtimeType}');
+          return;
+        }
+
+        if (dataMap['status'] == 'true' || dataMap['status'] == true) {
+          final data = dataMap['data'] != null
+              ? Map<String, dynamic>.from(dataMap['data'])
+              : {};
+          final wallet = data['wallet'] != null
+              ? Map<String, dynamic>.from(data['wallet'])
+              : {};
+
+          if (wallet.isNotEmpty) {
+            final balance =
+                double.tryParse(wallet['balance']?.toString() ?? '') ?? 0.0;
+            userWalletBalance.value = balance;
+            debugPrint('Wallet balance successfully fetched: $balance');
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching wallet: $e');
+    }
+  }
+
+  Future<bool> changePassword(
+    String currentPassword,
+    String newPassword,
+    String confirmPassword,
+  ) async {
+    isLoading.value = true;
+    try {
+      final connect = GetConnect();
+      connect.timeout = const Duration(seconds: 15);
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      final Map<String, String> headers = {};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final Map<String, String> body = {
+        'current_password': currentPassword,
+        'password': newPassword,
+        'confirm_password': confirmPassword,
+      };
+
+      final String url = '${ApiConfig.baseUrl}${ApiConfig.changePassword}';
+      debugPrint('=== CHANGE PASSWORD API CALL ===');
+      debugPrint('URL: $url');
+      debugPrint('Headers: $headers');
+      debugPrint('Body: $body');
+
+      final response = await connect.post(
+        url,
+        FormData(body),
+        headers: headers,
+      );
+
+      debugPrint('=== CHANGE PASSWORD RESPONSE ===');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      isLoading.value = false;
+
+      if (response.body != null) {
+        final resData = response.body;
+        Map<String, dynamic> dataMap;
+        if (resData is String) {
+          dataMap = Map<String, dynamic>.from(jsonDecode(resData));
+        } else if (resData is Map) {
+          dataMap = Map<String, dynamic>.from(resData);
+        } else {
+          showToast('Unexpected response format.'.tr, title: 'Error');
+          return false;
+        }
+
+        if (dataMap['status'] == 'true' || dataMap['status'] == true) {
+          await prefs.setString('user_password', newPassword);
+
+          String msg = 'Password changed successfully.';
+          if (dataMap['message'] != null) {
+            msg = _parseErrorMessage(dataMap['message']);
+          }
+          Future.delayed(
+            const Duration(milliseconds: 300),
+            () => showToast(msg, title: 'Success'),
+          );
+          return true;
+        } else {
+          final rawMsg = dataMap['message'];
+          String msg = _parseErrorMessage(rawMsg);
+          showToast(msg, title: 'Error');
+          return false;
+        }
+      } else {
+        showToast(
+          'Failed to change password. Please try again.'.tr,
+          title: 'Error',
+        );
+        return false;
+      }
+    } catch (e) {
+      isLoading.value = false;
+      debugPrint('Error changing password: $e');
+      showToast('An error occurred. Please try again.'.tr, title: 'Error');
+      return false;
+    }
+  }
+
+  Future<bool> deleteAccount(String password) async {
+    isLoading.value = true;
+    try {
+      final connect = GetConnect();
+      connect.timeout = const Duration(seconds: 15);
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      final Map<String, String> headers = {};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final String url = '${ApiConfig.baseUrl}${ApiConfig.deleteAccount}';
+
+      final Map<String, String> body = {'password': password};
+
+      debugPrint('=== DELETE ACCOUNT API CALL ===');
+      debugPrint('URL: $url');
+      debugPrint('Headers: $headers');
+      debugPrint('Body: $body');
+
+      final response = await connect.post(
+        url,
+        FormData(body),
+        headers: headers,
+      );
+
+      debugPrint('=== DELETE ACCOUNT RESPONSE ===');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      isLoading.value = false;
+
+      if (response.body != null) {
+        final resData = response.body;
+        Map<String, dynamic> dataMap;
+        if (resData is String) {
+          dataMap = Map<String, dynamic>.from(jsonDecode(resData));
+        } else if (resData is Map) {
+          dataMap = Map<String, dynamic>.from(resData);
+        } else {
+          showToast('Unexpected response format.'.tr, title: 'Error');
+          return false;
+        }
+
+        if (dataMap['status'] == 'true' || dataMap['status'] == true) {
+          final String msg =
+              dataMap['message']?.toString() ?? 'Account deleted successfully.';
+          showToast(msg.tr, title: 'Deleted');
+
+          // Clear session and navigate to sign-in page
+          await prefs.clear();
+          Get.offAll(() => const SignInView());
+          return true;
+        } else {
+          final rawMsg = dataMap['message'];
+          String msg = _parseErrorMessage(rawMsg);
+          showToast(msg, title: 'Error');
+          return false;
+        }
+      } else {
+        showToast(
+          'Failed to delete account. Please try again.'.tr,
+          title: 'Error',
+        );
+        return false;
+      }
+    } catch (e) {
+      isLoading.value = false;
+      debugPrint('Error deleting account: $e');
+      showToast('An error occurred. Please try again.'.tr, title: 'Error');
+      return false;
+    }
+  }
+
+  String _parseErrorMessage(dynamic messageObj) {
+    if (messageObj == null) return 'An error occurred. Please try again.';
+    if (messageObj is String) return messageObj;
+    if (messageObj is List) {
+      if (messageObj.isEmpty) return 'An error occurred. Please try again.';
+      return messageObj.map((e) => _parseErrorMessage(e)).join('\n');
+    }
+    if (messageObj is Map) {
+      String lang = 'en';
+      try {
+        lang = Get.find<LocalizationController>().currentLanguage.value;
+      } catch (_) {}
+
+      // Try language specific keys ending with _en, _fr, _ht
+      final suffix = '_$lang';
+      for (var key in messageObj.keys) {
+        if (key.toString().endsWith(suffix)) {
+          final val = messageObj[key];
+          if (val != null) {
+            return _parseErrorMessage(val);
+          }
+        }
+      }
+
+      // Try direct fields if any
+      final msgEn = messageObj['message_en'];
+      if (msgEn != null) return _parseErrorMessage(msgEn);
+      final msgFr = messageObj['message_fr'];
+      if (msgFr != null) return _parseErrorMessage(msgFr);
+      final msgHt = messageObj['message_ht'];
+      if (msgHt != null) return _parseErrorMessage(msgHt);
+
+      // Fallback
+      if (messageObj.isNotEmpty) {
+        return _parseErrorMessage(messageObj.values.first);
+      }
+    }
+    return messageObj.toString();
   }
 }

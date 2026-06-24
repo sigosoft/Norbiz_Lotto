@@ -12,6 +12,7 @@ class BetSuccessView extends StatelessWidget {
   final String betNumber;
   final double
   amount; // represents the total amount paid (including service fee)
+  final Map<String, dynamic>? ticketData;
 
   const BetSuccessView({
     Key? key,
@@ -19,6 +20,7 @@ class BetSuccessView extends StatelessWidget {
     required this.gameName,
     required this.betNumber,
     required this.amount,
+    this.ticketData,
   }) : super(key: key);
 
   double calculatePotentialWin(String gameName, double betAmount) {
@@ -44,6 +46,100 @@ class BetSuccessView extends StatelessWidget {
     return '2:00 PM (Afternoon)';
   }
 
+  String getTicketCode() {
+    if (ticketData != null && ticketData!['ticket_code'] != null) {
+      return ticketData!['ticket_code'].toString();
+    }
+    return ticketId;
+  }
+
+  String getAgentName(LocalizationController localizationController) {
+    if (ticketData == null) return 'Agent Bon Chans';
+    final lang = localizationController.currentLanguage.value;
+    if (lang == 'fr') {
+      return ticketData!['agent_name_fr'] ??
+          ticketData!['agent_name_en'] ??
+          'Agent Bon Chans';
+    } else if (lang == 'ht') {
+      return ticketData!['agent_name_ht'] ??
+          ticketData!['agent_name_en'] ??
+          'Agent Bon Chans';
+    }
+    return ticketData!['agent_name_en'] ?? 'Agent Bon Chans';
+  }
+
+  String getGameNameDisplay() {
+    if (ticketData == null) return gameName;
+    final lines = ticketData!['lines'];
+    if (lines is List && lines.isNotEmpty) {
+      final line = lines.first;
+      if (line is Map) {
+        return line['game_name_en'] ?? gameName;
+      }
+    }
+    return gameName;
+  }
+
+  String getBetNumberDisplay() {
+    if (ticketData == null) return betNumber;
+    final lines = ticketData!['lines'];
+    if (lines is List && lines.isNotEmpty) {
+      final line = lines.first;
+      if (line is Map) {
+        final primary = line['number_primary']?.toString() ?? '';
+        final secondary = line['number_secondary']?.toString() ?? '';
+        if (secondary.isNotEmpty && secondary != 'null') {
+          return primary + secondary;
+        }
+        return primary;
+      }
+    }
+    return betNumber;
+  }
+
+  double getBetAmount(double fallback) {
+    if (ticketData == null) return fallback;
+    final lines = ticketData!['lines'];
+    if (lines is List && lines.isNotEmpty) {
+      final line = lines.first;
+      if (line is Map && line['bet_amount'] != null) {
+        return double.tryParse(line['bet_amount'].toString()) ?? fallback;
+      }
+    }
+    return fallback;
+  }
+
+  double getPotentialWinDisplay(double betAmount) {
+    if (ticketData == null) return calculatePotentialWin(gameName, betAmount);
+    final lines = ticketData!['lines'];
+    if (lines is List && lines.isNotEmpty) {
+      final line = lines.first;
+      if (line is Map && line['potential_win'] != null) {
+        return double.tryParse(line['potential_win'].toString()) ??
+            calculatePotentialWin(gameName, betAmount);
+      }
+    }
+    return calculatePotentialWin(gameName, betAmount);
+  }
+
+  String getDrawTimeDisplay() {
+    if (ticketData != null && ticketData!['draw_session_name_en'] != null) {
+      return ticketData!['draw_session_name_en'].toString();
+    }
+    return getDrawTime(gameName);
+  }
+
+  String formatCurrency(double val) {
+    final currency = ticketData?['currency']?.toString() ?? '';
+    if (currency.isNotEmpty) {
+      if (currency == 'USD') {
+        return '\$${val.toStringAsFixed(2)}';
+      }
+      return '${val.toStringAsFixed(2)} $currency';
+    }
+    return '\$${val.toStringAsFixed(2)}';
+  }
+
   Widget _buildCircularBadge(String text) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: text.length > 2 ? 8.0 : 0.0),
@@ -67,7 +163,8 @@ class BetSuccessView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizationController = Get.find<LocalizationController>();
-    final double betAmount = amount >= 1.0 ? amount - 1.0 : amount;
+    final double rawBetAmount = amount >= 1.0 ? amount - 1.0 : amount;
+    final double betAmount = getBetAmount(rawBetAmount);
 
     return Obx(() {
       final textDirection = localizationController.textDirection;
@@ -85,7 +182,7 @@ class BetSuccessView extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 20),
+                  // const SizedBox(height: 5),
                   // Stacked stars and successtick images
                   Stack(
                     alignment: Alignment.center,
@@ -104,7 +201,7 @@ class BetSuccessView extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 2),
                   const Text(
                     "Bet Placed Successfully",
                     style: TextStyle(
@@ -152,7 +249,7 @@ class BetSuccessView extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            ticketId,
+                            getTicketCode(),
                             style: const TextStyle(
                               color: AppTheme.primaryOrange,
                               fontWeight: FontWeight.bold,
@@ -219,7 +316,7 @@ class BetSuccessView extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    gameName,
+                                    getGameNameDisplay(),
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Color(0xFF1E293B),
@@ -227,9 +324,9 @@ class BetSuccessView extends StatelessWidget {
                                     ),
                                   ),
                                   const SizedBox(height: 4),
-                                  const Text(
-                                    "Agent Bon Chans",
-                                    style: TextStyle(
+                                  Text(
+                                    getAgentName(localizationController),
+                                    style: const TextStyle(
                                       color: Color(0xFF94A3B8),
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
@@ -238,7 +335,7 @@ class BetSuccessView extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            _buildCircularBadge(betNumber),
+                            _buildCircularBadge(getBetNumberDisplay()),
                           ],
                         ),
                         const Divider(
@@ -262,7 +359,9 @@ class BetSuccessView extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  "\$${calculatePotentialWin(gameName, betAmount).toStringAsFixed(2)}",
+                                  formatCurrency(
+                                    getPotentialWinDisplay(betAmount),
+                                  ),
                                   style: const TextStyle(
                                     color: Color(0xFF002C8B),
                                     fontWeight: FontWeight.bold,
@@ -284,7 +383,7 @@ class BetSuccessView extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  getDrawTime(gameName),
+                                  getDrawTimeDisplay(),
                                   style: const TextStyle(
                                     color: Color(0xFF1E293B),
                                     fontWeight: FontWeight.bold,
@@ -312,7 +411,7 @@ class BetSuccessView extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              "\$${amount.toStringAsFixed(2)}",
+                              formatCurrency(amount),
                               style: const TextStyle(
                                 color: AppTheme.primaryOrange,
                                 fontWeight: FontWeight.bold,
@@ -324,7 +423,7 @@ class BetSuccessView extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 10),
 
                   // Buttons
                   ElevatedButton(
@@ -349,7 +448,7 @@ class BetSuccessView extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 5),
                   Row(
                     children: [
                       Expanded(
@@ -380,8 +479,7 @@ class BetSuccessView extends StatelessWidget {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
-                            Get.offAll(() => const MainNavigationView());
-                            Get.find<HomeController>().changeNavIndex(0);
+                            Get.back();
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFFFF7ED),

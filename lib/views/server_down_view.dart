@@ -36,9 +36,9 @@ class ServerDownView extends StatelessWidget {
                         ),
                         const SizedBox(height: 32),
                         // Title
-                        const Text(
-                          'Server Down',
-                          style: TextStyle(
+                        Text(
+                          'Server Down'.tr,
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 22,
                             color: Color(0xFF0F172A),
@@ -63,8 +63,8 @@ class ServerDownView extends StatelessWidget {
                               ),
                               elevation: 0,
                             ),
-                            child: const Text(
-                              'Got It',
+                            child: Text(
+                              'Got It'.tr,
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                             ),
                           ),

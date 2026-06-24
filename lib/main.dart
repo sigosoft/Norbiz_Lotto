@@ -14,8 +14,11 @@ import 'views/server_down_view.dart';
 import 'views/maintenance_view.dart';
 import 'views/update_view.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load translations asynchronously from ARB files
+  await AppTranslations.loadTranslations();
 
   // Inject core controllers early
   Get.put(LocalizationController(), permanent: true);

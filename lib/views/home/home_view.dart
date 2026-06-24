@@ -129,7 +129,9 @@ class HomeView extends StatelessWidget {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
                       image: const DecorationImage(
-                        image: AssetImage('lib/assets/images/caurosal slider.png'),
+                        image: AssetImage(
+                          'lib/assets/images/caurosal slider.png',
+                        ),
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -236,12 +238,16 @@ class HomeView extends StatelessWidget {
                                     children: List.generate(
                                       homeController.games.length,
                                       (index) {
-                                        final game = homeController.games[index];
+                                        final game =
+                                            homeController.games[index];
                                         return Padding(
                                           padding: EdgeInsets.only(
                                             right:
                                                 index ==
-                                                    homeController.games.length - 1
+                                                    homeController
+                                                            .games
+                                                            .length -
+                                                        1
                                                 ? 0.0
                                                 : 12.0,
                                           ),
@@ -264,7 +270,9 @@ class HomeView extends StatelessWidget {
                                   color: const Color(0xFFEFF2FD),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
                                 child: Row(
                                   children: [
                                     const Icon(
@@ -303,81 +311,118 @@ class HomeView extends StatelessWidget {
                               const SizedBox(height: 16),
 
                               Obx(() {
-                                final selectedId = homeController.selectedDrawSessionId.value;
-                                final activeLang = localizationController.currentLanguage.value;
-                                
+                                final selectedId =
+                                    homeController.selectedDrawSessionId.value;
+                                final activeLang = localizationController
+                                    .currentLanguage
+                                    .value;
+
                                 String currentDrawName = 'All Sessions';
-                                if (selectedId != null && homeController.drawFilters.isNotEmpty) {
-                                  final currentFilter = homeController.drawFilters.firstWhere(
-                                    (f) => f['draw_session_id'] == selectedId,
-                                    orElse: () => null,
-                                  );
+                                if (selectedId != null &&
+                                    homeController.drawFilters.isNotEmpty) {
+                                  final currentFilter = homeController
+                                      .drawFilters
+                                      .firstWhere(
+                                        (f) =>
+                                            f['draw_session_id'] == selectedId,
+                                        orElse: () => null,
+                                      );
                                   if (currentFilter != null) {
                                     if (activeLang == 'fr') {
-                                      currentDrawName = currentFilter['name_fr'] ?? currentFilter['name_en'] ?? '';
+                                      currentDrawName =
+                                          currentFilter['name_fr'] ??
+                                          currentFilter['name_en'] ??
+                                          '';
                                     } else if (activeLang == 'ht') {
-                                      currentDrawName = currentFilter['name_ht'] ?? currentFilter['name_en'] ?? '';
+                                      currentDrawName =
+                                          currentFilter['name_ht'] ??
+                                          currentFilter['name_en'] ??
+                                          '';
                                     } else {
-                                      currentDrawName = currentFilter['name_en'] ?? '';
+                                      currentDrawName =
+                                          currentFilter['name_en'] ?? '';
                                     }
                                   }
                                 } else {
-                                  currentDrawName = 'all_sessions'.tr == 'all_sessions' ? 'All Sessions' : 'all_sessions'.tr;
+                                  currentDrawName =
+                                      'all_sessions'.tr == 'all_sessions'
+                                      ? 'All Sessions'
+                                      : 'all_sessions'.tr;
                                 }
 
                                 return GestureDetector(
                                   onTap: () async {
-                                    if (homeController.drawFilters.isEmpty) return;
-                                    
-                                    final RelativeRect position = RelativeRect.fromLTRB(
-                                      16.0,
-                                      MediaQuery.of(context).size.height * 0.45,
-                                      16.0,
-                                      0,
-                                    );
-                                    
+                                    if (homeController.drawFilters.isEmpty)
+                                      return;
+
+                                    final RelativeRect position =
+                                        RelativeRect.fromLTRB(
+                                          16.0,
+                                          MediaQuery.of(context).size.height *
+                                              0.45,
+                                          16.0,
+                                          0,
+                                        );
+
                                     final items = <PopupMenuEntry<int?>>[
                                       PopupMenuItem<int?>(
                                         value: null,
                                         child: Text(
-                                          'all_sessions'.tr == 'all_sessions' ? 'All Sessions' : 'all_sessions'.tr,
-                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                          'all_sessions'.tr == 'all_sessions'
+                                              ? 'All Sessions'
+                                              : 'all_sessions'.tr,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
                                     ];
-                                    
-                                    for (var filter in homeController.drawFilters) {
+
+                                    for (var filter
+                                        in homeController.drawFilters) {
                                       final int id = filter['draw_session_id'];
                                       String name = filter['name_en'] ?? '';
                                       if (activeLang == 'fr') {
-                                        name = filter['name_fr'] ?? filter['name_en'] ?? '';
+                                        name =
+                                            filter['name_fr'] ??
+                                            filter['name_en'] ??
+                                            '';
                                       } else if (activeLang == 'ht') {
-                                        name = filter['name_ht'] ?? filter['name_en'] ?? '';
+                                        name =
+                                            filter['name_ht'] ??
+                                            filter['name_en'] ??
+                                            '';
                                       }
-                                      items.add(PopupMenuItem<int?>(
-                                        value: id,
-                                        child: Text(name),
-                                      ));
+                                      items.add(
+                                        PopupMenuItem<int?>(
+                                          value: id,
+                                          child: Text(name),
+                                        ),
+                                      );
                                     }
-                                    
+
                                     final int? result = await showMenu<int?>(
                                       context: context,
                                       position: position,
                                       items: items,
                                       elevation: 8,
                                     );
-                                    
-                                    homeController.selectedDrawSessionId.value = result;
+
+                                    homeController.selectedDrawSessionId.value =
+                                        result;
                                   },
                                   child: Container(
                                     height: 48,
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFFFF5EA),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Expanded(
                                           child: Row(
@@ -391,7 +436,8 @@ class HomeView extends StatelessWidget {
                                               Expanded(
                                                 child: Text(
                                                   currentDrawName,
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                   style: const TextStyle(
                                                     fontWeight: FontWeight.w700,
                                                     color: Color(0xFF1E293B),
@@ -450,11 +496,14 @@ class HomeView extends StatelessWidget {
                                     ? '${selectedGame.name} ${selectedGame.category}'
                                     : selectedGame.name;
 
-                                final activeLang = localizationController.currentLanguage.value;
+                                final activeLang = localizationController
+                                    .currentLanguage
+                                    .value;
 
                                 if (homeController.gameBoard.isEmpty) {
                                   return Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         gameTitle,
@@ -467,7 +516,10 @@ class HomeView extends StatelessWidget {
                                       const SizedBox(height: 24),
                                       Center(
                                         child: Text(
-                                          'no_games_available'.tr == 'no_games_available' ? 'No games available at this time' : 'no_games_available'.tr,
+                                          'no_games_available'.tr ==
+                                                  'no_games_available'
+                                              ? 'No games available at this time'
+                                              : 'no_games_available'.tr,
                                           style: const TextStyle(
                                             color: Colors.grey,
                                             fontSize: 14,
@@ -491,61 +543,93 @@ class HomeView extends StatelessWidget {
                                       ),
                                     ),
                                     const SizedBox(height: 12),
-                                    ...List.generate(homeController.gameBoard.length, (idx) {
-                                      final board = homeController.gameBoard[idx];
-                                      
-                                      String agentName = board['agent_name_en'] ?? '';
-                                      if (activeLang == 'fr') {
-                                        agentName = board['agent_name_fr'] ?? board['agent_name_en'] ?? '';
-                                      } else if (activeLang == 'ht') {
-                                        agentName = board['agent_name_ht'] ?? board['agent_name_en'] ?? '';
-                                      }
+                                    ...List.generate(
+                                      homeController.gameBoard.length,
+                                      (idx) {
+                                        final board =
+                                            homeController.gameBoard[idx];
 
-                                      String drawName = board['draw_session_name_en'] ?? '';
-                                      if (activeLang == 'fr') {
-                                        drawName = board['draw_session_name_fr'] ?? board['draw_session_name_en'] ?? '';
-                                      } else if (activeLang == 'ht') {
-                                        drawName = board['draw_session_name_ht'] ?? board['draw_session_name_en'] ?? '';
-                                      }
+                                        String agentName =
+                                            board['agent_name_en'] ?? '';
+                                        if (activeLang == 'fr') {
+                                          agentName =
+                                              board['agent_name_fr'] ??
+                                              board['agent_name_en'] ??
+                                              '';
+                                        } else if (activeLang == 'ht') {
+                                          agentName =
+                                              board['agent_name_ht'] ??
+                                              board['agent_name_en'] ??
+                                              '';
+                                        }
 
-                                      String nextDrawTime = board['next_draw_label_en'] ?? '';
-                                      if (activeLang == 'fr') {
-                                        nextDrawTime = board['next_draw_label_fr'] ?? board['next_draw_label_en'] ?? '';
-                                      } else if (activeLang == 'ht') {
-                                        nextDrawTime = board['next_draw_label_ht'] ?? board['next_draw_label_en'] ?? '';
-                                      }
+                                        String drawName =
+                                            board['draw_session_name_en'] ?? '';
+                                        if (activeLang == 'fr') {
+                                          drawName =
+                                              board['draw_session_name_fr'] ??
+                                              board['draw_session_name_en'] ??
+                                              '';
+                                        } else if (activeLang == 'ht') {
+                                          drawName =
+                                              board['draw_session_name_ht'] ??
+                                              board['draw_session_name_en'] ??
+                                              '';
+                                        }
 
-                                      final winLabel = board['win_label'] ?? '';
-                                      final payoutStr = winLabel.replaceAll('WIN ', '');
+                                        String nextDrawTime =
+                                            board['next_draw_label_en'] ?? '';
+                                        if (activeLang == 'fr') {
+                                          nextDrawTime =
+                                              board['next_draw_label_fr'] ??
+                                              board['next_draw_label_en'] ??
+                                              '';
+                                        } else if (activeLang == 'ht') {
+                                          nextDrawTime =
+                                              board['next_draw_label_ht'] ??
+                                              board['next_draw_label_en'] ??
+                                              '';
+                                        }
 
-                                      final boardGameModel = GameModel(
-                                        id: selectedGame.id,
-                                        name: selectedGame.name,
-                                        payout: selectedGame.payout,
-                                        category: selectedGame.category,
-                                        cardGradient: selectedGame.cardGradient,
-                                        minBet: selectedGame.minBet,
-                                        maxBet: selectedGame.maxBet,
-                                        agentName: agentName,
-                                        drawName: drawName,
-                                        nextDrawTime: nextDrawTime,
-                                        rawBoardData: Map<String, dynamic>.from(board),
-                                      );
+                                        final winLabel =
+                                            board['win_label'] ?? '';
+                                        final payoutStr = winLabel.replaceAll(
+                                          'WIN ',
+                                          '',
+                                        );
 
-                                      return _buildAgentPlayCard(
-                                        agentName: agentName,
-                                        drawName: drawName,
-                                        nextDrawTime: nextDrawTime,
-                                        gameCategory: selectedGame.category,
-                                        payout: payoutStr,
-                                        hasBorder: false,
-                                        onTap: () {
-                                          Get.to(
-                                            () => BorletteView(game: boardGameModel),
-                                          );
-                                        },
-                                      );
-                                    }),
+                                        final boardGameModel = GameModel(
+                                          id: selectedGame.id,
+                                          name: selectedGame.name,
+                                          payout: selectedGame.payout,
+                                          category: selectedGame.category,
+                                          cardGradient:
+                                              selectedGame.cardGradient,
+                                          minBet: selectedGame.minBet,
+                                          maxBet: selectedGame.maxBet,
+                                          agentName: agentName,
+                                          drawName: drawName,
+                                          nextDrawTime: nextDrawTime,
+                                          rawBoardData:
+                                              Map<String, dynamic>.from(board),
+                                        );
+
+                                        return _buildAgentPlayCard(
+                                          agentName: agentName,
+                                          drawName: drawName,
+                                          nextDrawTime: nextDrawTime,
+                                          gameCategory: selectedGame.category,
+                                          payout: payoutStr,
+                                          hasBorder: false,
+                                          onTap: () {
+                                            homeController.playGame(
+                                              board,
+                                              selectedGame,
+                                            );
+                                          },
+                                        );
+                                      },
+                                    ),
                                   ],
                                 );
                               }),
@@ -650,7 +734,7 @@ class HomeView extends StatelessWidget {
                           nextDrawTime.toLowerCase().contains('prochain') ||
                           nextDrawTime.toLowerCase().contains('pwochen'))
                       ? nextDrawTime
-                      : 'Next Draw is $nextDrawTime',
+                      : 'Next Draw is @time'.trParams({'time': nextDrawTime}),
                   style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 10,
@@ -739,8 +823,8 @@ class HomeView extends StatelessWidget {
                                 Text(
                                   (gameCategory == '2 C' ||
                                           gameCategory == '2 combo')
-                                      ? 'Pick 2 combo'
-                                      : 'Pick $gameCategory',
+                                      ? 'Pick 2 combo'.tr
+                                      : 'pick_category'.trParams({'category': gameCategory}),
                                   style: const TextStyle(
                                     color: Color(0xFF002C8B),
                                     fontSize: 18,
@@ -752,12 +836,12 @@ class HomeView extends StatelessWidget {
                                   const SizedBox(height: 2),
                                   Text(
                                     gameCategory == '3D'
-                                        ? 'Pick 000-999'
+                                        ? 'Pick 000-999'.tr
                                         : gameCategory == '4D'
-                                        ? 'Pick 0000-9999'
+                                        ? 'Pick 0000-9999'.tr
                                         : gameCategory == '5D'
-                                        ? 'Pick 3+2 D Combo'
-                                        : 'Pick 00-99',
+                                        ? 'Pick 3+2 D Combo'.tr
+                                        : 'Pick 00-99'.tr,
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 11,
@@ -796,9 +880,9 @@ class HomeView extends StatelessWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            const Text(
-                              'WIN',
-                              style: TextStyle(
+                            Text(
+                              'WIN'.tr,
+                              style: const TextStyle(
                                 color: Color(0xFF002C8B),
                                 fontWeight: FontWeight.w900,
                                 fontSize: 14,
@@ -834,9 +918,9 @@ class HomeView extends StatelessWidget {
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
-                      'Play',
-                      style: TextStyle(
+                    child: Text(
+                      'Play'.tr,
+                      style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),

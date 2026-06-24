@@ -307,6 +307,119 @@ class CartController extends GetxController {
     return true;
   }
 
+  Future<Map<String, dynamic>?> purchaseTicket({
+    required int drawId,
+    required int gameTypeId,
+    required String numberPrimary,
+    required String numberSecondary,
+    required double betAmount,
+  }) async {
+    isLoading.value = true;
+    try {
+      final connect = GetConnect();
+      connect.timeout = const Duration(seconds: 15);
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      final Map<String, String> headers = {};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final Map<String, dynamic> body = {
+        'draw_id': drawId.toString(),
+        'game_type_id': gameTypeId.toString(),
+        'number_primary': numberPrimary,
+        'number_secondary': numberSecondary,
+        'bet_amount': betAmount.toString(),
+      };
+
+      final url = '${ApiConfig.baseUrl}${ApiConfig.ticketsPurchase}';
+      debugPrint('=== PURCHASE TICKET API CALL ===');
+      debugPrint('URL: $url');
+      debugPrint('Token: $token');
+      debugPrint('Headers: $headers');
+      debugPrint('Body: $body');
+
+      final response = await connect.post(
+        url,
+        FormData(body),
+        headers: headers,
+      );
+
+      debugPrint('=== PURCHASE TICKET RESPONSE ===');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 200 && response.body != null) {
+        final dynamic resData = response.body;
+        Map<String, dynamic> dataMap;
+        if (resData is String) {
+          dataMap = Map<String, dynamic>.from(jsonDecode(resData));
+        } else if (resData is Map) {
+          dataMap = Map<String, dynamic>.from(resData);
+        } else {
+          debugPrint('Unexpected response body type: ${resData.runtimeType}');
+          return null;
+        }
+
+        if (dataMap['status'] == 'true' || dataMap['status'] == true) {
+          final data = dataMap['data'] != null
+              ? Map<String, dynamic>.from(dataMap['data'])
+              : {};
+
+          // Update wallet balance if returned
+          final wallet = data['wallet'] != null
+              ? Map<String, dynamic>.from(data['wallet'])
+              : {};
+          if (wallet.isNotEmpty) {
+            final balance =
+                double.tryParse(wallet['balance']?.toString() ?? '') ?? 0.0;
+            if (balance > 0) {
+              final authController = Get.find<AuthController>();
+              authController.userWalletBalance.value = balance;
+            }
+          }
+
+          final ticket = data['ticket'] != null
+              ? Map<String, dynamic>.from(data['ticket'])
+              : {};
+          final ticketCode =
+              ticket['ticket_code']?.toString() ??
+              ticket['ticket_id']?.toString() ??
+              'SUCCESS';
+          final totalAmount =
+              double.tryParse(ticket['total_amount']?.toString() ?? '') ??
+              (betAmount + 1.0);
+
+          return {
+            'ticketCode': ticketCode,
+            'totalAmount': totalAmount,
+            'ticketData': ticket,
+          };
+        } else {
+          final errMsg = _parseErrorMessage(dataMap['message']);
+          showToast(errMsg, title: 'Error');
+          return null;
+        }
+      } else {
+        final dynamic resData = response.body;
+        String errMsg = 'Server error. Please try again.';
+        if (resData != null && resData is Map && resData['message'] != null) {
+          errMsg = _parseErrorMessage(resData['message']);
+        }
+        showToast(errMsg, title: 'Error');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('Error purchasing ticket: $e');
+      showToast('Connection error: $e', title: 'Error');
+      return null;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   String _parseErrorMessage(dynamic messageObj) {
     if (messageObj == null) return 'An error occurred. Please try again.';
     if (messageObj is String) return messageObj;

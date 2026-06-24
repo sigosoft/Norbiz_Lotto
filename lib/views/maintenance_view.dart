@@ -48,10 +48,10 @@ class MaintenanceView extends StatelessWidget {
                         ),
                         const SizedBox(height: 32),
                         // Title
-                        const Center(
+                        Center(
                           child: Text(
-                            "We'll Be Back Soon",
-                            style: TextStyle(
+                            "We'll Be Back Soon".tr,
+                            style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 22,
                               color: Color(0xFF0F172A),
@@ -61,10 +61,10 @@ class MaintenanceView extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
                         // Subtitle
-                        const Center(
+                        Center(
                           child: Text(
-                            "sorry, we're down for maintenance we'll be back up shortly.",
-                            style: TextStyle(
+                            "sorry, we're down for maintenance we'll be back up shortly.".tr,
+                            style: const TextStyle(
                               color: Color(0xFF64748B),
                               fontSize: 14,
                               height: 1.4,

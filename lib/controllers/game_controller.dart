@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/game_model.dart';
 import '../models/dream_model.dart';
+import '../configs/api_config.dart';
+import '../configs/toast.dart';
 
 class GameController extends GetxController {
   // Active game selected
@@ -131,23 +134,82 @@ class GameController extends GetxController {
     isQuickPicked.value = false;
   }
 
-  void performQuickPick() {
-    int len = 2;
-    if (activeGame.category == '3D') len = 3;
-    if (activeGame.category == '4D') len = 4;
-    if (activeGame.category == '5D') len = 5;
-    if (activeGame.category == '2 C' || activeGame.category == '2 combo')
-      len = 4;
-
-    // Generate random digits
-    var random = DateTime.now().millisecond;
-    String picks = '';
-    for (int i = 0; i < len; i++) {
-      picks += ((random + i * 7) % 10).toString();
+  Future<void> performQuickPick() async {
+    int gameTypeId = 1;
+    if (activeGame.rawBoardData != null &&
+        activeGame.rawBoardData!['game_type_id'] != null) {
+      gameTypeId =
+          int.tryParse(
+            activeGame.rawBoardData!['game_type_id'].toString(),
+          ) ??
+          1;
+    } else {
+      final name = activeGame.id.toLowerCase();
+      if (name.contains('borlette'))
+        gameTypeId = 1;
+      else if (name.contains('maryaj') ||
+          name.contains('marriage'))
+        gameTypeId = 2;
+      else if (name.contains('3d') || name.contains('loto3'))
+        gameTypeId = 3;
+      else if (name.contains('4d') || name.contains('loto4'))
+        gameTypeId = 4;
+      else if (name.contains('5d') || name.contains('loto5'))
+        gameTypeId = 5;
     }
-    selectedNumbers.value = picks;
-    activeTarget.value = 'none';
-    isQuickPicked.value = true;
+
+    try {
+      final connect = GetConnect();
+      connect.timeout = const Duration(seconds: 15);
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      final Map<String, String> headers = {};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final String url = '${ApiConfig.baseUrl}${ApiConfig.quickPick}?game_type_id=$gameTypeId';
+      debugPrint('=== QUICK PICK API CALL ===');
+      debugPrint('URL: $url');
+      debugPrint('Headers: $headers');
+
+      final response = await connect.get(url, headers: headers);
+
+      debugPrint('=== QUICK PICK RESPONSE ===');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 200 && response.body != null) {
+        final dataMap = response.body;
+        if (dataMap['status'] == 'true' || dataMap['status'] == true) {
+          final data = dataMap['data'];
+          if (data != null && data['numbers'] != null) {
+            final numbers = data['numbers'];
+            final primary = numbers['number_primary']?.toString() ?? '';
+            final secondary = numbers['number_secondary']?.toString() ?? '';
+            
+            if (secondary.isNotEmpty) {
+              selectedNumbers.value = primary + secondary;
+            } else {
+              selectedNumbers.value = primary;
+            }
+            activeTarget.value = 'none';
+            isQuickPicked.value = true;
+          }
+        } else {
+          final dynamic errMsg = dataMap['message'] != null
+              ? dataMap['message']
+              : 'Failed to generate quick pick numbers.';
+          showToast(errMsg, title: 'Error');
+        }
+      } else {
+        showToast('Server error. Please try again.', title: 'Error');
+      }
+    } catch (e) {
+      debugPrint('Error performing quick pick: $e');
+      showToast('An error occurred. Please try again.', title: 'Error');
+    }
   }
 
   // Validation

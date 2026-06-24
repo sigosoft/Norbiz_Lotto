@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:norbiz_loto/controllers/home_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/auth_controller.dart';
 import 'navigation/main_navigation_view.dart';
@@ -34,6 +35,7 @@ class _SplashViewState extends State<SplashView> {
             prefs.getString('user_phone') ?? '';
         authController.userEmail.value = prefs.getString('user_email') ?? '';
 
+        Get.find<HomeController>().fetchHomeData();
         Get.offAll(() => const MainNavigationView());
       } else {
         Get.offAll(() => const OnboardingView());

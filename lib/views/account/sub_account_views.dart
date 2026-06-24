@@ -246,14 +246,14 @@ class AccountInfoView extends StatelessWidget {
                                               fontSize: 14,
                                               fontWeight: FontWeight.bold,
                                             ),
-                                            items: const [
+                                            items: [
                                               DropdownMenuItem(
                                                 value: 'Male',
-                                                child: Text('Male'),
+                                                child: Text('Male'.tr),
                                               ),
                                               DropdownMenuItem(
                                                 value: 'Female',
-                                                child: Text('Female'),
+                                                child: Text('Female'.tr),
                                               ),
                                             ],
                                             onChanged: (val) {
@@ -407,6 +407,7 @@ class AccountInfoView extends StatelessWidget {
   }
 
   void _showDeleteAccountBottomSheet(BuildContext context) {
+    final authController = Get.find<AuthController>();
     Get.bottomSheet(
       Material(
         color: Colors.white,
@@ -502,8 +503,83 @@ class AccountInfoView extends StatelessWidget {
                       height: 48,
                       child: ElevatedButton(
                         onPressed: () {
-                          Get.back();
-                          Get.offAll(() => const SignInView());
+                          final passwordController = TextEditingController();
+                          Get.dialog(
+                            AlertDialog(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              title: Text(
+                                'Delete Account'.tr,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF0F172A),
+                                ),
+                              ),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Please enter your password to confirm account deletion.'
+                                        .tr,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  TextField(
+                                    controller: passwordController,
+                                    obscureText: true,
+                                    decoration: InputDecoration(
+                                      hintText: 'Password'.tr,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 10,
+                                          ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Get.back(),
+                                  child: Text(
+                                    'Cancel'.tr,
+                                    style: const TextStyle(color: Colors.grey),
+                                  ),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    final pwd = passwordController.text.trim();
+                                    if (pwd.isEmpty) {
+                                      showToast(
+                                        'Please enter your password.'.tr,
+                                        title: 'Error',
+                                      );
+                                      return;
+                                    }
+                                    Get.back(); // close dialog
+                                    Get.back(); // close bottom sheet
+                                    authController.deleteAccount(pwd);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    minimumSize: const Size(80, 38),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                  ),
+                                  child: Text('Yes'.tr),
+                                ),
+                              ],
+                            ),
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFE9900),
@@ -875,14 +951,14 @@ class EditAccountInfoView extends StatelessWidget {
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.bold,
                                                 ),
-                                                items: const [
+                                                items: [
                                                   DropdownMenuItem(
                                                     value: 'Male',
-                                                    child: Text('Male'),
+                                                    child: Text('Male'.tr),
                                                   ),
                                                   DropdownMenuItem(
                                                     value: 'Female',
-                                                    child: Text('Female'),
+                                                    child: Text('Female'.tr),
                                                   ),
                                                 ],
                                                 onChanged: (val) {
@@ -1056,6 +1132,10 @@ class TransactionsView extends StatelessWidget {
     final accountController = Get.find<AccountController>();
     final localizationController = Get.find<LocalizationController>();
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      accountController.fetchTransactions();
+    });
+
     final customHeaderRow = Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       child: Row(
@@ -1175,9 +1255,13 @@ class TransactionsView extends StatelessWidget {
                     child: Obx(() {
                       final list = accountController.filteredTransactions;
                       if (list.isEmpty) {
+                        final String displayMsg =
+                            'no_transactions'.tr == 'no_transactions'
+                            ? 'No Transactions'
+                            : 'no_transactions'.tr;
                         return Center(
                           child: Text(
-                            'no_transactions'.tr,
+                            displayMsg,
                             style: const TextStyle(
                               color: AppTheme.primaryDarkBlue,
                               fontWeight: FontWeight.bold,
@@ -1387,10 +1471,7 @@ class BankAccountsView extends StatelessWidget {
         color: const Color(0xFFCBD5E1),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(
-            vertical: 28,
-            horizontal: 16,
-          ),
+          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
           child: Column(
             children: [
               Container(
@@ -1418,10 +1499,7 @@ class BankAccountsView extends StatelessWidget {
               Text(
                 'withdraw_desc'.tr,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 11,
-                ),
+                style: const TextStyle(color: Colors.grey, fontSize: 11),
               ),
             ],
           ),
@@ -1450,7 +1528,9 @@ class BankAccountsView extends StatelessWidget {
                     child: Obx(() {
                       if (accountController.isBankLoading.value) {
                         return const Center(
-                          child: CircularProgressIndicator(color: Color(0xFFFE9900)),
+                          child: CircularProgressIndicator(
+                            color: Color(0xFFFE9900),
+                          ),
                         );
                       }
 
@@ -1537,9 +1617,13 @@ class BankAccountsView extends StatelessWidget {
                                                         ],
                                                       ),
                                                     ),
-                                                    // Edit image button (no background)
                                                     GestureDetector(
-                                                      onTap: () {},
+                                                      onTap: () => Get.to(
+                                                        () =>
+                                                            EditBankAccountView(
+                                                              account: acc,
+                                                            ),
+                                                      ),
                                                       child: Image.asset(
                                                         'lib/assets/images/Edit.png',
                                                         width: 18,
@@ -1585,11 +1669,75 @@ class BankAccountsView extends StatelessWidget {
                                                     ),
                                                     // Delete image button (no background)
                                                     GestureDetector(
-                                                      onTap: () =>
-                                                          accountController
-                                                              .deleteBankAccount(
-                                                                acc.id,
+                                                      onTap: () {
+                                                        Get.dialog(
+                                                          AlertDialog(
+                                                            shape: RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    20,
+                                                                  ),
+                                                            ),
+                                                            title: Text(
+                                                              'Delete Account'
+                                                                  .tr,
+                                                              style: const TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                color: Color(
+                                                                  0xFF0F172A,
+                                                                ),
                                                               ),
+                                                            ),
+                                                            content: Text(
+                                                              'Want to delete account?'
+                                                                  .tr,
+                                                            ),
+                                                            actions: [
+                                                              TextButton(
+                                                                onPressed: () =>
+                                                                    Get.back(),
+                                                                child: Text(
+                                                                  'No'.tr,
+                                                                  style: const TextStyle(
+                                                                    color: Colors
+                                                                        .grey,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                              ElevatedButton(
+                                                                onPressed: () {
+                                                                  Get.back();
+                                                                  accountController
+                                                                      .deleteBankAccount(
+                                                                        acc.id,
+                                                                      );
+                                                                },
+                                                                style: ElevatedButton.styleFrom(
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .red,
+                                                                  minimumSize:
+                                                                      const Size(
+                                                                        80,
+                                                                        38,
+                                                                      ),
+                                                                  shape: RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                          20,
+                                                                        ),
+                                                                  ),
+                                                                ),
+                                                                child: Text(
+                                                                  'Yes'.tr,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        );
+                                                      },
                                                       child: Image.asset(
                                                         'lib/assets/images/Delete.png',
                                                         width: 18,
@@ -1679,13 +1827,13 @@ class BankAccountsView extends StatelessWidget {
                         numberController.text.isNotEmpty &&
                         bankController.text.isNotEmpty) {
                       controller.addBankAccount(
-                        holderController.text,
-                        numberController.text,
-                        bankController.text,
+                        holder: holderController.text,
+                        number: numberController.text,
+                        bank: bankController.text,
                       );
                     }
                   },
-                  child: const Text('Add Account'),
+                  child: Text('Add Account'.tr),
                 ),
               ],
             ),
@@ -1811,7 +1959,6 @@ class AddBankAccountView extends StatelessWidget {
                           _buildTextField(
                             label: 'Currency',
                             controller: currencyController,
-                            readOnly: true,
                           ),
                           const SizedBox(height: 32),
                           SizedBox(
@@ -1850,9 +1997,11 @@ class AddBankAccountView extends StatelessWidget {
                                 }
 
                                 accountController.addBankAccount(
-                                  holderNameController.text,
-                                  accountNumberController.text,
-                                  bankNameController.text,
+                                  holder: holderNameController.text,
+                                  number: accountNumberController.text,
+                                  bank: bankNameController.text,
+                                  swift: swiftController.text,
+                                  currency: currencyController.text,
                                 );
                               },
                               style: ElevatedButton.styleFrom(
@@ -1865,6 +2014,267 @@ class AddBankAccountView extends StatelessWidget {
                               ),
                               child: const Text(
                                 'Save',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildTextField({
+    required String label,
+    required TextEditingController controller,
+    bool obscureText = false,
+    Widget? suffixIcon,
+    TextInputType keyboardType = TextInputType.text,
+    bool readOnly = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF94A3B8),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          obscureText: obscureText,
+          keyboardType: keyboardType,
+          readOnly: readOnly,
+          style: const TextStyle(
+            color: Color(0xFF0F172A),
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+          decoration: InputDecoration(
+            fillColor: Colors.white,
+            filled: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFFE2E8F0),
+                width: 1.0,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFFFE9900),
+                width: 1.5,
+              ),
+            ),
+            suffixIcon: suffixIcon,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ------------------------------------------------------------
+// 3c. Edit Bank Account View
+// ------------------------------------------------------------
+class EditBankAccountView extends StatelessWidget {
+  final BankAccountModel account;
+  const EditBankAccountView({Key? key, required this.account})
+    : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final accountController = Get.find<AccountController>();
+    final localizationController = Get.find<LocalizationController>();
+
+    final bankNameController = TextEditingController(text: account.bankName);
+    final holderNameController = TextEditingController(
+      text: account.accountHolder,
+    );
+    final accountNumberController = TextEditingController(
+      text: account.accountNumber,
+    );
+    final confirmAccountNumberController = TextEditingController(
+      text: account.accountNumber,
+    );
+    final swiftController = TextEditingController(
+      text: account.branchName ?? '',
+    );
+    final currencyController = TextEditingController(
+      text: account.currency ?? 'USD',
+    );
+
+    final customHeaderRow = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          GestureDetector(
+            onTap: () => Get.back(),
+            child: Container(
+              height: 38,
+              width: 38,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.chevron_left_rounded,
+                color: Color(0xFF0F172A),
+                size: 24,
+              ),
+            ),
+          ),
+          const Text(
+            'Bank Account Details',
+            style: TextStyle(
+              color: Color(0xFF0F172A),
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(width: 38), // Spacer of same width to center the title
+        ],
+      ),
+    );
+
+    return Obx(() {
+      final textDirection = localizationController.textDirection;
+
+      return Directionality(
+        textDirection: textDirection,
+        child: Scaffold(
+          backgroundColor: const Color(0xFFEFF3FD),
+          body: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: AppTheme.pageBackgroundGradient,
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  customHeaderRow,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildTextField(
+                            label: 'Bank Name',
+                            controller: bankNameController,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            label: 'Account Holder Name',
+                            controller: holderNameController,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            label: 'Account Number',
+                            controller: accountNumberController,
+                            keyboardType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            label: 'Confirm Account Number',
+                            controller: confirmAccountNumberController,
+                            keyboardType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            label: 'SWIFT / BIC Code',
+                            controller: swiftController,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            label: 'Currency',
+                            controller: currencyController,
+                          ),
+                          const SizedBox(height: 32),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                if (bankNameController.text.isEmpty) {
+                                  showToast(
+                                    'Please enter Bank Name'.tr,
+                                    title: 'Error',
+                                  );
+                                  return;
+                                }
+                                if (holderNameController.text.isEmpty) {
+                                  showToast(
+                                    'Please enter Account Holder Name'.tr,
+                                    title: 'Error',
+                                  );
+                                  return;
+                                }
+                                if (accountNumberController.text.isEmpty) {
+                                  showToast(
+                                    'Please enter Account Number'.tr,
+                                    title: 'Error',
+                                  );
+                                  return;
+                                }
+                                if (accountNumberController.text !=
+                                    confirmAccountNumberController.text) {
+                                  showToast(
+                                    'Account Numbers do not match'.tr,
+                                    title: 'Error',
+                                  );
+                                  return;
+                                }
+
+                                accountController.updateBankAccount(
+                                  id: account.id,
+                                  holder: holderNameController.text,
+                                  number: accountNumberController.text,
+                                  bank: bankNameController.text,
+                                  swift: swiftController.text,
+                                  currency: currencyController.text,
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFE9900),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Text(
+                                'Update',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15,
@@ -4820,6 +5230,312 @@ class HelpCenterView extends StatelessWidget {
               style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
             ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+// ------------------------------------------------------------
+// Change Password View
+// ------------------------------------------------------------
+class ChangePasswordView extends StatelessWidget {
+  const ChangePasswordView({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final authController = Get.find<AuthController>();
+    final localizationController = Get.find<LocalizationController>();
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+
+    final isCurrentPasswordVisible = false.obs;
+    final isNewPasswordVisible = false.obs;
+    final isConfirmPasswordVisible = false.obs;
+
+    final customHeaderRow = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          GestureDetector(
+            onTap: () => Get.back(),
+            child: Container(
+              height: 38,
+              width: 38,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.chevron_left_rounded,
+                color: Color(0xFF0F172A),
+                size: 24,
+              ),
+            ),
+          ),
+          Text(
+            'Change Password'.tr,
+            style: const TextStyle(
+              color: Color(0xFF0F172A),
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(width: 38), // Spacer of same width to center the title
+        ],
+      ),
+    );
+
+    return Obx(() {
+      final textDirection = localizationController.textDirection;
+
+      return Directionality(
+        textDirection: textDirection,
+        child: Scaffold(
+          backgroundColor: const Color(0xFFEFF3FD),
+          body: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: AppTheme.pageBackgroundGradient,
+            ),
+            child: SafeArea(
+              child: Stack(
+                children: [
+                  Column(
+                    children: [
+                      customHeaderRow,
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Obx(
+                                () => _buildTextField(
+                                  label: 'Current Password'.tr,
+                                  controller: currentPasswordController,
+                                  obscureText: !isCurrentPasswordVisible.value,
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      isCurrentPasswordVisible.value
+                                          ? Icons.visibility
+                                          : Icons.visibility_off,
+                                      color: Colors.grey,
+                                    ),
+                                    onPressed: () =>
+                                        isCurrentPasswordVisible.value =
+                                            !isCurrentPasswordVisible.value,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Obx(
+                                () => _buildTextField(
+                                  label: 'enter_new_password'.tr,
+                                  controller: newPasswordController,
+                                  obscureText: !isNewPasswordVisible.value,
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      isNewPasswordVisible.value
+                                          ? Icons.visibility
+                                          : Icons.visibility_off,
+                                      color: Colors.grey,
+                                    ),
+                                    onPressed: () =>
+                                        isNewPasswordVisible.value =
+                                            !isNewPasswordVisible.value,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Obx(
+                                () => _buildTextField(
+                                  label: 'enter_confirm_password'.tr,
+                                  controller: confirmPasswordController,
+                                  obscureText: !isConfirmPasswordVisible.value,
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      isConfirmPasswordVisible.value
+                                          ? Icons.visibility
+                                          : Icons.visibility_off,
+                                      color: Colors.grey,
+                                    ),
+                                    onPressed: () =>
+                                        isConfirmPasswordVisible.value =
+                                            !isConfirmPasswordVisible.value,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 32),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 40,
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    final currentPwd =
+                                        currentPasswordController.text;
+                                    final newPwd = newPasswordController.text;
+                                    final confirmPwd =
+                                        confirmPasswordController.text;
+
+                                    if (currentPwd.isEmpty) {
+                                      showToast(
+                                        'Please enter your current password.'
+                                            .tr,
+                                        title: 'Error',
+                                      );
+                                      return;
+                                    }
+                                    if (newPwd.isEmpty) {
+                                      showToast(
+                                        'Please enter your new password.'.tr,
+                                        title: 'Error',
+                                      );
+                                      return;
+                                    }
+                                    if (newPwd.length < 6) {
+                                      showToast(
+                                        'Password must be at least 6 characters.'
+                                            .tr,
+                                        title: 'Error',
+                                      );
+                                      return;
+                                    }
+                                    if (confirmPwd.isEmpty) {
+                                      showToast(
+                                        'Please confirm your new password.'.tr,
+                                        title: 'Error',
+                                      );
+                                      return;
+                                    }
+                                    if (newPwd != confirmPwd) {
+                                      showToast(
+                                        'Passwords do not match.'.tr,
+                                        title: 'Error',
+                                      );
+                                      return;
+                                    }
+
+                                    // Call actual API using AuthController
+                                    final success = await authController
+                                        .changePassword(
+                                          currentPwd,
+                                          newPwd,
+                                          confirmPwd,
+                                        );
+                                    if (success) {
+                                      Get.back();
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFFE9900),
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(24),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: Text(
+                                    'save'.tr,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Obx(() {
+                    if (authController.isLoading.value) {
+                      return Positioned.fill(
+                        child: Container(
+                          color: Colors.white.withOpacity(0.3),
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFFE9900),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  }),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildTextField({
+    required String label,
+    required TextEditingController controller,
+    bool obscureText = false,
+    Widget? suffixIcon,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF94A3B8),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          obscureText: obscureText,
+          keyboardType: keyboardType,
+          style: const TextStyle(
+            color: Color(0xFF0F172A),
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+          decoration: InputDecoration(
+            fillColor: Colors.white,
+            filled: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFFE2E8F0),
+                width: 1.0,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFFFE9900),
+                width: 1.5,
+              ),
+            ),
+            suffixIcon: suffixIcon,
+          ),
         ),
       ],
     );

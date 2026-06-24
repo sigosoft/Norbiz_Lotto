@@ -36,9 +36,9 @@ class UpdateView extends StatelessWidget {
                         ),
                         const SizedBox(height: 40),
                         // Title
-                        const Text(
-                          'Needs An Update',
-                          style: TextStyle(
+                        Text(
+                          'Needs An Update'.tr,
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 22,
                             color: Color(0xFF0F172A),
@@ -47,9 +47,9 @@ class UpdateView extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
                         // Subtitle
-                        const Text(
-                          'A new version of Norbiz Paryaj is available with improved performance, security, and new features. Please update the app to continue.',
-                          style: TextStyle(
+                        Text(
+                          'A new version of Norbiz Paryaj is available with improved performance, security, and new features. Please update the app to continue.'.tr,
+                          style: const TextStyle(
                             color: Color(0xFF64748B),
                             fontSize: 14,
                             height: 1.4,
@@ -75,8 +75,8 @@ class UpdateView extends StatelessWidget {
                               ),
                               elevation: 0,
                             ),
-                            child: const Text(
-                              'Update',
+                            child: Text(
+                              'Update'.tr,
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                             ),
                           ),

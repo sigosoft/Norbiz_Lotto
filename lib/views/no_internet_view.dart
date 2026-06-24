@@ -36,9 +36,9 @@ class NoInternetView extends StatelessWidget {
                         ),
                         const SizedBox(height: 32),
                         // Title
-                        const Text(
-                          'No Internet Connection',
-                          style: TextStyle(
+                        Text(
+                          'No Internet Connection'.tr,
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 22,
                             color: Color(0xFF0F172A),
@@ -47,9 +47,9 @@ class NoInternetView extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         // Subtitle
-                        const Text(
-                          'please check your internet connection and try again.',
-                          style: TextStyle(
+                        Text(
+                          'please check your internet connection and try again.'.tr,
+                          style: const TextStyle(
                             color: Color(0xFF64748B),
                             fontSize: 14,
                           ),
@@ -72,8 +72,8 @@ class NoInternetView extends StatelessWidget {
                               ),
                               elevation: 0,
                             ),
-                            child: const Text(
-                              'Try Again',
+                            child: Text(
+                              'Try Again'.tr,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,

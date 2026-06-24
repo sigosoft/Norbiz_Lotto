@@ -9,6 +9,7 @@ import 'game_controller.dart';
 import 'localization_controller.dart';
 import 'auth_controller.dart';
 import 'bet_history_controller.dart';
+import '../views/game/borlette_view.dart';
 
 class HomeController extends GetxController {
   // Navigation
@@ -50,6 +51,14 @@ class HomeController extends GetxController {
     });
     ever(selectedDrawSessionId, (_) {
       fetchHomeData();
+    });
+
+    // Reactively update game model translations when language changes
+    final localizationController = Get.find<LocalizationController>();
+    ever(localizationController.currentLanguage, (_) {
+      if (gameTabs.isNotEmpty) {
+        _loadGamesFromTabs(gameTabs);
+      }
     });
   }
 
@@ -105,6 +114,7 @@ class HomeController extends GetxController {
 
       debugPrint('=== FETCH HOME RESPONSE ===');
       debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
 
       if (response.statusCode == 200 && response.body != null) {
         final dynamic resData = response.body;
@@ -132,9 +142,115 @@ class HomeController extends GetxController {
           drawFilters.value = data['draw_filters'] != null
               ? List<dynamic>.from(data['draw_filters'])
               : [];
-          gameBoard.value = data['game_board'] != null
+          final rawGameBoard = data['game_board'] != null
               ? List<dynamic>.from(data['game_board'])
               : [];
+
+          debugPrint('Found ${rawGameBoard.length} items in rawGameBoard');
+
+          final List<Map<String, dynamic>> updatedGameBoard = [];
+          final List<Future<void>> fetchFutures = [];
+
+          for (var item in rawGameBoard) {
+            final boardMap = Map<String, dynamic>.from(item);
+            updatedGameBoard.add(boardMap);
+
+            // Extract the draw session ID using fallback keys for maximum compatibility
+            final drawSessionId =
+                boardMap['draw_session_id'] ??
+                boardMap['draw_session']?['id'] ??
+                boardMap['draw_id'] ??
+                boardMap['id'];
+
+            debugPrint(
+              'Iterating gameBoard item, resolved drawSessionId: $drawSessionId',
+            );
+            if (drawSessionId != null) {
+              debugPrint(
+                'Scheduling fetchUpcomingDraw for drawSessionId: $drawSessionId',
+              );
+              fetchFutures.add(() async {
+                try {
+                  final upcomingDraw = await fetchUpcomingDraw(
+                    drawSessionId.toString(),
+                    token,
+                  );
+                  debugPrint(
+                    'fetchUpcomingDraw returned for drawSessionId: $drawSessionId, hasData: ${upcomingDraw != null}',
+                  );
+                  if (upcomingDraw != null) {
+                    debugPrint(
+                      'Upcoming draw data for drawSessionId $drawSessionId: $upcomingDraw',
+                    );
+                    boardMap['draw_session_name_en'] =
+                        upcomingDraw['name_en'] ??
+                        boardMap['draw_session_name_en'];
+                    boardMap['draw_session_name_fr'] =
+                        upcomingDraw['name_fr'] ??
+                        boardMap['draw_session_name_fr'];
+                    boardMap['draw_session_name_ht'] =
+                        upcomingDraw['name_ht'] ??
+                        boardMap['draw_session_name_ht'];
+
+                    final officialTime = upcomingDraw['official_draw_time']
+                        ?.toString();
+                    final tz = upcomingDraw['timezone']?.toString();
+                    if (officialTime != null && officialTime.isNotEmpty) {
+                      boardMap['next_draw_label_en'] = formatDrawTime(
+                        officialTime,
+                        tz,
+                        'en',
+                      );
+                      boardMap['next_draw_label_fr'] = formatDrawTime(
+                        officialTime,
+                        tz,
+                        'fr',
+                      );
+                      boardMap['next_draw_label_ht'] = formatDrawTime(
+                        officialTime,
+                        tz,
+                        'ht',
+                      );
+                    } else {
+                      boardMap['next_draw_label_en'] =
+                          upcomingDraw['next_draw_label_en'] ??
+                          boardMap['next_draw_label_en'];
+                      boardMap['next_draw_label_fr'] =
+                          upcomingDraw['next_draw_label_fr'] ??
+                          boardMap['next_draw_label_fr'];
+                      boardMap['next_draw_label_ht'] =
+                          upcomingDraw['next_draw_label_ht'] ??
+                          boardMap['next_draw_label_ht'];
+                    }
+
+                    boardMap['agent_name_en'] =
+                        upcomingDraw['agent_name_en'] ??
+                        boardMap['agent_name_en'];
+                    boardMap['agent_name_fr'] =
+                        upcomingDraw['agent_name_fr'] ??
+                        boardMap['agent_name_fr'];
+                    boardMap['agent_name_ht'] =
+                        upcomingDraw['agent_name_ht'] ??
+                        boardMap['agent_name_ht'];
+                  }
+                } catch (err) {
+                  debugPrint(
+                    'Error updating boardMap with upcoming draw: $err',
+                  );
+                }
+              }());
+            }
+          }
+
+          if (fetchFutures.isNotEmpty) {
+            debugPrint(
+              'Waiting for ${fetchFutures.length} upcoming draw calls...',
+            );
+            await Future.wait(fetchFutures);
+            debugPrint('Done waiting for upcoming draw calls.');
+          }
+
+          gameBoard.value = updatedGameBoard;
 
           final wallet = data['wallet'];
           if (wallet != null) {
@@ -253,7 +369,7 @@ class HomeController extends GetxController {
         GameModel(
           id: localId,
           name: name,
-          payout: 'Payout: $payoutLabel',
+          payout: 'payout_label_format'.trParams({'label': payoutLabel}),
           category: category,
           cardGradient: gradient,
           minBet: minBet,
@@ -276,6 +392,7 @@ class HomeController extends GetxController {
   }
 
   void changeNavIndex(int index) {
+    debugPrint('=== changeNavIndex called with index: $index ===');
     currentNavIndex.value = index;
     if (index == 2) {
       try {
@@ -291,8 +408,304 @@ class HomeController extends GetxController {
       } catch (_) {}
     } else if (index == 4) {
       try {
-        Get.find<AuthController>().fetchProfile();
+        final authController = Get.find<AuthController>();
+        authController.fetchProfile();
+        authController.fetchWallet();
       } catch (_) {}
+    }
+  }
+
+  Future<Map<String, dynamic>?> fetchUpcomingDraw(
+    String drawSessionId,
+    String? token,
+  ) async {
+    try {
+      final connect = GetConnect();
+      connect.timeout = const Duration(seconds: 10);
+
+      final Map<String, String> headers = {};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final url =
+          '${ApiConfig.baseUrl}${ApiConfig.upcomingDraws}?draw_session_id=$drawSessionId';
+      debugPrint('=== FETCH UPCOMING DRAW API CALL ===');
+      debugPrint('URL: $url');
+      debugPrint('Headers: $headers');
+
+      final response = await connect.get(url, headers: headers);
+      debugPrint('=== FETCH UPCOMING DRAW RESPONSE ===');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 200 && response.body != null) {
+        final dynamic resData = response.body;
+        Map<String, dynamic> dataMap;
+        if (resData is String) {
+          dataMap = Map<String, dynamic>.from(jsonDecode(resData));
+        } else if (resData is Map) {
+          dataMap = Map<String, dynamic>.from(resData);
+        } else {
+          debugPrint(
+            'Unexpected response body type for upcoming draw: ${resData.runtimeType}',
+          );
+          return null;
+        }
+
+        if (dataMap['status'] == 'true' || dataMap['status'] == true) {
+          final data = dataMap['data'];
+          if (data != null &&
+              data['draws'] is List &&
+              (data['draws'] as List).isNotEmpty) {
+            return Map<String, dynamic>.from(data['draws'][0]);
+          } else {
+            debugPrint('No upcoming draws list or empty draws array in data');
+          }
+        } else {
+          debugPrint(
+            'Status field in upcoming draw response was not true: ${dataMap['status']}',
+          );
+        }
+      } else {
+        debugPrint(
+          'Failed to get upcoming draw response: Status code ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      debugPrint('Error in fetchUpcomingDraw: $e');
+    }
+    return null;
+  }
+
+  void clearData() {
+    banners.clear();
+    gameTabs.clear();
+    drawFilters.clear();
+    gameBoard.clear();
+    walletBalance.value = null;
+  }
+
+  String formatDrawTime(String? timeStr, String? timezone, String lang) {
+    if (timeStr == null || timeStr.isEmpty) return '';
+    try {
+      final parts = timeStr.split(':');
+      if (parts.isNotEmpty) {
+        int hour = int.parse(parts[0]);
+        int minute = parts.length > 1 ? int.parse(parts[1]) : 0;
+        final minuteStr = minute.toString().padLeft(2, '0');
+
+        final isET =
+            timezone != null && timezone.toLowerCase().contains('new_york');
+
+        if (lang == 'fr') {
+          final tzSuffix = isET ? ' HE' : '';
+          return '${hour}h$minuteStr$tzSuffix';
+        } else {
+          final ampm = hour >= 12 ? 'PM' : 'AM';
+          final hour12 = hour % 12 == 0 ? 12 : hour % 12;
+          final tzSuffix = isET ? ' ET' : '';
+          return '$hour12:$minuteStr $ampm$tzSuffix';
+        }
+      }
+    } catch (e) {
+      debugPrint('Error formatting draw time: $e');
+    }
+    return timeStr;
+  }
+
+  Future<Map<String, dynamic>?> fetchPlayDetails(
+    String drawId,
+    String gameTypeId,
+    String? token,
+  ) async {
+    try {
+      final connect = GetConnect();
+      connect.timeout = const Duration(seconds: 15);
+
+      final Map<String, String> headers = {};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final url =
+          '${ApiConfig.baseUrl}${ApiConfig.ticketsPlay}?draw_id=$drawId&game_type_id=$gameTypeId';
+      debugPrint('=== FETCH TICKETS PLAY API CALL ===');
+      debugPrint('URL: $url');
+      debugPrint('Headers: $headers');
+
+      final response = await connect.get(url, headers: headers);
+      debugPrint('=== FETCH TICKETS PLAY RESPONSE ===');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 200 && response.body != null) {
+        final dynamic resData = response.body;
+        Map<String, dynamic> dataMap;
+        if (resData is String) {
+          dataMap = Map<String, dynamic>.from(jsonDecode(resData));
+        } else if (resData is Map) {
+          dataMap = Map<String, dynamic>.from(resData);
+        } else {
+          debugPrint(
+            'Unexpected response body type for tickets play: ${resData.runtimeType}',
+          );
+          return null;
+        }
+
+        if (dataMap['status'] == 'true' || dataMap['status'] == true) {
+          final data = dataMap['data'];
+          if (data != null && data['play'] is Map) {
+            return Map<String, dynamic>.from(data['play']);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error in fetchPlayDetails: $e');
+    }
+    return null;
+  }
+
+  Future<void> playGame(
+    Map<String, dynamic> board,
+    GameModel selectedGame,
+  ) async {
+    isLoading.value = true;
+    try {
+      final drawId =
+          board['draw_id'] ?? board['draw_session_id'] ?? board['id'];
+      final gameTypeId = board['game_type_id'] ?? selectedGameTypeId.value;
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+
+      final playDetails = await fetchPlayDetails(
+        drawId.toString(),
+        gameTypeId.toString(),
+        token,
+      );
+
+      final updatedBoard = Map<String, dynamic>.from(board);
+      if (playDetails != null) {
+        updatedBoard.addAll(playDetails);
+      }
+
+      final localizationController = Get.find<LocalizationController>();
+      final activeLang = localizationController.currentLanguage.value;
+
+      String agentName = updatedBoard['agent_name_en'] ?? '';
+      if (activeLang == 'fr') {
+        agentName =
+            updatedBoard['agent_name_fr'] ??
+            updatedBoard['agent_name_en'] ??
+            '';
+      } else if (activeLang == 'ht') {
+        agentName =
+            updatedBoard['agent_name_ht'] ??
+            updatedBoard['agent_name_en'] ??
+            '';
+      }
+
+      String drawName = updatedBoard['draw_session_name_en'] ?? '';
+      if (activeLang == 'fr') {
+        drawName =
+            updatedBoard['draw_session_name_fr'] ??
+            updatedBoard['draw_session_name_en'] ??
+            '';
+      } else if (activeLang == 'ht') {
+        drawName =
+            updatedBoard['draw_session_name_ht'] ??
+            updatedBoard['draw_session_name_en'] ??
+            '';
+      }
+
+      String nextDrawTime = updatedBoard['next_draw_label_en'] ?? '';
+      final officialTime = updatedBoard['official_draw_time']?.toString();
+      final tz = updatedBoard['timezone']?.toString();
+      if (officialTime != null && officialTime.isNotEmpty) {
+        nextDrawTime = formatDrawTime(officialTime, tz, activeLang);
+      } else {
+        if (activeLang == 'fr') {
+          nextDrawTime =
+              updatedBoard['next_draw_label_fr'] ??
+              updatedBoard['next_draw_label_en'] ??
+              '';
+        } else if (activeLang == 'ht') {
+          nextDrawTime =
+              updatedBoard['next_draw_label_ht'] ??
+              updatedBoard['next_draw_label_en'] ??
+              '';
+        }
+      }
+
+      final boardGameModel = GameModel(
+        id: selectedGame.id,
+        name: selectedGame.name,
+        payout: selectedGame.payout,
+        category: selectedGame.category,
+        cardGradient: selectedGame.cardGradient,
+        minBet: selectedGame.minBet,
+        maxBet: selectedGame.maxBet,
+        agentName: agentName.isNotEmpty ? agentName : selectedGame.agentName,
+        drawName: drawName.isNotEmpty ? drawName : selectedGame.drawName,
+        nextDrawTime: nextDrawTime.isNotEmpty
+            ? nextDrawTime
+            : selectedGame.nextDrawTime,
+        rawBoardData: updatedBoard,
+      );
+
+      Get.to(() => BorletteView(game: boardGameModel));
+    } catch (e) {
+      debugPrint('Error in playGame: $e');
+      // If error, fall back to navigation using whatever data is in board
+      final localizationController = Get.find<LocalizationController>();
+      final activeLang = localizationController.currentLanguage.value;
+
+      String agentName = board['agent_name_en'] ?? '';
+      if (activeLang == 'fr') {
+        agentName = board['agent_name_fr'] ?? board['agent_name_en'] ?? '';
+      } else if (activeLang == 'ht') {
+        agentName = board['agent_name_ht'] ?? board['agent_name_en'] ?? '';
+      }
+
+      String drawName = board['draw_session_name_en'] ?? '';
+      if (activeLang == 'fr') {
+        drawName =
+            board['draw_session_name_fr'] ??
+            board['draw_session_name_en'] ??
+            '';
+      } else if (activeLang == 'ht') {
+        drawName =
+            board['draw_session_name_ht'] ??
+            board['draw_session_name_en'] ??
+            '';
+      }
+
+      String nextDrawTime = board['next_draw_label_en'] ?? '';
+      if (activeLang == 'fr') {
+        nextDrawTime =
+            board['next_draw_label_fr'] ?? board['next_draw_label_en'] ?? '';
+      } else if (activeLang == 'ht') {
+        nextDrawTime =
+            board['next_draw_label_ht'] ?? board['next_draw_label_en'] ?? '';
+      }
+
+      final boardGameModel = GameModel(
+        id: selectedGame.id,
+        name: selectedGame.name,
+        payout: selectedGame.payout,
+        category: selectedGame.category,
+        cardGradient: selectedGame.cardGradient,
+        minBet: selectedGame.minBet,
+        maxBet: selectedGame.maxBet,
+        agentName: agentName,
+        drawName: drawName,
+        nextDrawTime: nextDrawTime,
+        rawBoardData: Map<String, dynamic>.from(board),
+      );
+      Get.to(() => BorletteView(game: boardGameModel));
+    } finally {
+      isLoading.value = false;
     }
   }
 }

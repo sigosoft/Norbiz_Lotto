@@ -14,6 +14,7 @@ class ConnectivityController extends GetxController {
 
   Timer? _timer;
   bool _isChecking = false;
+  int _failedCount = 0;
 
   @override
   void onInit() {
@@ -37,17 +38,21 @@ class ConnectivityController extends GetxController {
       // 1. Check general internet connection with fallback
       bool generalConnectionOk = false;
       try {
-        final internetResult = await InternetAddress.lookup('google.com')
-            .timeout(const Duration(seconds: 3));
-        if (internetResult.isNotEmpty && internetResult[0].rawAddress.isNotEmpty) {
+        final internetResult = await InternetAddress.lookup(
+          'google.com',
+        ).timeout(const Duration(seconds: 2));
+        if (internetResult.isNotEmpty &&
+            internetResult[0].rawAddress.isNotEmpty) {
           generalConnectionOk = true;
         }
       } catch (_) {
         // Fallback check in case google.com is blocked/slow on this network
         try {
-          final fallbackResult = await InternetAddress.lookup('cloudflare.com')
-              .timeout(const Duration(seconds: 3));
-          if (fallbackResult.isNotEmpty && fallbackResult[0].rawAddress.isNotEmpty) {
+          final fallbackResult = await InternetAddress.lookup(
+            'cloudflare.com',
+          ).timeout(const Duration(seconds: 2));
+          if (fallbackResult.isNotEmpty &&
+              fallbackResult[0].rawAddress.isNotEmpty) {
             generalConnectionOk = true;
           }
         } catch (_) {
@@ -56,14 +61,17 @@ class ConnectivityController extends GetxController {
       }
 
       if (generalConnectionOk) {
+        _failedCount = 0;
         isConnected.value = true;
 
         // 2. Check backend server connection if configured with a specific custom host
         if (backendHost.isNotEmpty && backendHost != "google.com") {
           try {
-            final serverResult = await InternetAddress.lookup(backendHost)
-                .timeout(const Duration(seconds: 3));
-            if (serverResult.isNotEmpty && serverResult[0].rawAddress.isNotEmpty) {
+            final serverResult = await InternetAddress.lookup(
+              backendHost,
+            ).timeout(const Duration(seconds: 2));
+            if (serverResult.isNotEmpty &&
+                serverResult[0].rawAddress.isNotEmpty) {
               isServerDown.value = false;
             } else {
               isServerDown.value = true;
@@ -76,10 +84,16 @@ class ConnectivityController extends GetxController {
           isServerDown.value = false;
         }
       } else {
-        isConnected.value = false;
+        _failedCount++;
+        if (_failedCount >= 3) {
+          isConnected.value = false;
+        }
       }
     } catch (_) {
-      isConnected.value = false;
+      _failedCount++;
+      if (_failedCount >= 3) {
+        isConnected.value = false;
+      }
     } finally {
       _isChecking = false;
     }

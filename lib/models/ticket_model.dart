@@ -8,6 +8,8 @@ class TicketModel {
   final double betAmount;
   final double? winAmount;
   final TicketStatus status;
+  final String? currency;
+  final String? statusLabel;
 
   TicketModel({
     required this.id,
@@ -17,5 +19,7 @@ class TicketModel {
     required this.betAmount,
     this.winAmount,
     required this.status,
+    this.currency,
+    this.statusLabel,
   });
 }
