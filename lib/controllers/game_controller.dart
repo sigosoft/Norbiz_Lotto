@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,6 +22,7 @@ class GameController extends GetxController {
   var filteredTchala = <DreamModel>[].obs;
   var tchalaSearchQuery = ''.obs;
   final tchalaController = TextEditingController();
+  Timer? _searchDebounceTimer;
 
   @override
   void onInit() {
@@ -66,6 +68,7 @@ class GameController extends GetxController {
     if (query.isEmpty) {
       filteredTchala.value = tchalaList;
     } else {
+      // Local filter first for instant UI response
       filteredTchala.value = tchalaList
           .where(
             (item) =>
@@ -73,6 +76,125 @@ class GameController extends GetxController {
                 item.numbers.any((n) => n.contains(query)),
           )
           .toList();
+
+      // Debounce and trigger API search
+      _searchDebounceTimer?.cancel();
+      _searchDebounceTimer = Timer(const Duration(milliseconds: 400), () {
+        searchTchalaApi(query);
+      });
+    }
+  }
+
+  Future<void> searchTchalaApi(String query) async {
+    if (query.isEmpty) return;
+
+    try {
+      final connect = GetConnect();
+      connect.timeout = const Duration(seconds: 15);
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      final Map<String, String> headers = {};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final String url =
+          '${ApiConfig.baseUrl}${ApiConfig.tchalaSearch}?q=${Uri.encodeComponent(query)}';
+      debugPrint('=== TCHALA SEARCH API CALL ===');
+      debugPrint('URL: $url');
+      debugPrint('Headers: $headers');
+
+      final response = await connect.get(url, headers: headers);
+
+      debugPrint('=== TCHALA SEARCH RESPONSE ===');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      // If the user has typed something else in the meantime, discard this response
+      if (tchalaController.text != query) {
+        debugPrint(
+          'Discarding search response for "$query" as current input is "${tchalaController.text}"',
+        );
+        return;
+      }
+
+      if (response.statusCode == 200 && response.body != null) {
+        final dataMap = response.body;
+        if (dataMap['status'] == 'true' || dataMap['status'] == true) {
+          final data = dataMap['data'];
+          if (data != null && data['results'] != null) {
+            final resultsList = data['results'] as List;
+            final List<DreamModel> apiResults = [];
+            for (var item in resultsList) {
+              if (item is Map) {
+                final word =
+                    (item['word'] ??
+                            item['title'] ??
+                            item['name'] ??
+                            item['dream'] ??
+                            '')
+                        .toString();
+                final rawNumbers = item['numbers'] ?? item['number'] ?? [];
+
+                List<String> parsedNumbers = [];
+                if (rawNumbers is List) {
+                  parsedNumbers = rawNumbers
+                      .map((e) => e.toString().trim())
+                      .toList();
+                } else if (rawNumbers is String) {
+                  if (rawNumbers.contains(',')) {
+                    parsedNumbers = rawNumbers
+                        .split(',')
+                        .map((e) => e.trim())
+                        .toList();
+                  } else if (rawNumbers.contains('-')) {
+                    parsedNumbers = rawNumbers
+                        .split('-')
+                        .map((e) => e.trim())
+                        .toList();
+                  } else if (rawNumbers.contains(' ')) {
+                    parsedNumbers = rawNumbers
+                        .split(RegExp(r'\s+'))
+                        .map((e) => e.trim())
+                        .toList();
+                  } else {
+                    parsedNumbers = [rawNumbers.trim()];
+                  }
+                }
+
+                apiResults.add(DreamModel(word: word, numbers: parsedNumbers));
+              }
+            }
+
+            // Merge API results with the local filtered results to prevent results from disappearing
+            final List<DreamModel> merged = List<DreamModel>.from(apiResults);
+            final localFiltered = tchalaList
+                .where(
+                  (item) =>
+                      item.word.toLowerCase().contains(query.toLowerCase()) ||
+                      item.numbers.any((n) => n.contains(query)),
+                )
+                .toList();
+
+            for (var localItem in localFiltered) {
+              final alreadyExists = merged.any(
+                (m) =>
+                    m.word.trim().toLowerCase() ==
+                    localItem.word.trim().toLowerCase(),
+              );
+              if (!alreadyExists) {
+                merged.add(localItem);
+              }
+            }
+
+            filteredTchala.value = merged;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error searching Tchala API: $e');
+      // local filter remains active
     }
   }
 
@@ -139,16 +261,13 @@ class GameController extends GetxController {
     if (activeGame.rawBoardData != null &&
         activeGame.rawBoardData!['game_type_id'] != null) {
       gameTypeId =
-          int.tryParse(
-            activeGame.rawBoardData!['game_type_id'].toString(),
-          ) ??
+          int.tryParse(activeGame.rawBoardData!['game_type_id'].toString()) ??
           1;
     } else {
       final name = activeGame.id.toLowerCase();
       if (name.contains('borlette'))
         gameTypeId = 1;
-      else if (name.contains('maryaj') ||
-          name.contains('marriage'))
+      else if (name.contains('maryaj') || name.contains('marriage'))
         gameTypeId = 2;
       else if (name.contains('3d') || name.contains('loto3'))
         gameTypeId = 3;
@@ -169,7 +288,8 @@ class GameController extends GetxController {
         headers['Authorization'] = 'Bearer $token';
       }
 
-      final String url = '${ApiConfig.baseUrl}${ApiConfig.quickPick}?game_type_id=$gameTypeId';
+      final String url =
+          '${ApiConfig.baseUrl}${ApiConfig.quickPick}?game_type_id=$gameTypeId';
       debugPrint('=== QUICK PICK API CALL ===');
       debugPrint('URL: $url');
       debugPrint('Headers: $headers');
@@ -188,7 +308,7 @@ class GameController extends GetxController {
             final numbers = data['numbers'];
             final primary = numbers['number_primary']?.toString() ?? '';
             final secondary = numbers['number_secondary']?.toString() ?? '';
-            
+
             if (secondary.isNotEmpty) {
               selectedNumbers.value = primary + secondary;
             } else {
@@ -297,8 +417,101 @@ class GameController extends GetxController {
     );
   }
 
+  Future<void> fetchAndShowRules(int gameTypeId, String gameName) async {
+    try {
+      final connect = GetConnect();
+      connect.timeout = const Duration(seconds: 15);
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      final Map<String, String> headers = {};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final String url =
+          '${ApiConfig.baseUrl}${ApiConfig.gamesRules}?game_type_id=$gameTypeId';
+      debugPrint('=== GAMES RULES API CALL ===');
+      debugPrint('URL: $url');
+      debugPrint('Headers: $headers');
+
+      // Show loading dialog
+      Get.dialog(
+        const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0D319C)),
+          ),
+        ),
+        barrierDismissible: false,
+      );
+
+      final response = await connect.get(url, headers: headers);
+
+      // Close loading dialog
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+
+      debugPrint('=== GAMES RULES API RESPONSE ===');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      String rulesText = '';
+
+      if (response.statusCode == 200 && response.body != null) {
+        final dataMap = response.body;
+        if (dataMap['status'] == 'true' || dataMap['status'] == true) {
+          final data = dataMap['data'];
+          if (data != null) {
+            final rulesObj = data['rules'] ?? data['game'] ?? data;
+            if (rulesObj is Map) {
+              final lang = Get.locale?.languageCode ?? 'en';
+              final ruleVal =
+                  rulesObj['rules_$lang'] ??
+                  rulesObj['rule_$lang'] ??
+                  rulesObj['description_$lang'] ??
+                  rulesObj['rules'] ??
+                  rulesObj['rule'] ??
+                  rulesObj['description'] ??
+                  rulesObj['rules_en'] ??
+                  rulesObj['rule_en'] ??
+                  rulesObj['description_en'];
+              if (ruleVal != null) {
+                rulesText = ruleVal.toString();
+              }
+            }
+          }
+        }
+      }
+
+      if (rulesText.isEmpty) {
+        rulesText = 'No rules available for this game.';
+      }
+
+      Get.dialog(
+        AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(gameName),
+          content: SingleChildScrollView(child: Text(rulesText)),
+          actions: [
+            TextButton(onPressed: () => Get.back(), child: Text('ok'.tr)),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+      debugPrint('Error fetching game rules: $e');
+      showToast('Failed to load rules. Please try again.', title: 'Error');
+    }
+  }
+
   @override
   void onClose() {
+    _searchDebounceTimer?.cancel();
     tchalaController.dispose();
     super.onClose();
   }

@@ -715,6 +715,50 @@ class AuthController extends GetxController {
   Future<void> logout() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+
+      // Call the logout (GET) API
+      try {
+        final connect = GetConnect();
+        connect.timeout = const Duration(seconds: 10);
+
+        final Map<String, String> headers = {};
+        if (token != null && token.isNotEmpty) {
+          headers['Authorization'] = 'Bearer $token';
+        }
+
+        final String url = '${ApiConfig.baseUrl}${ApiConfig.logout}';
+        debugPrint('=== LOGOUT API CALL ===');
+        debugPrint('URL: $url');
+        debugPrint('Headers: $headers');
+
+        final response = await connect.get(url, headers: headers);
+        debugPrint('=== LOGOUT API RESPONSE ===');
+        debugPrint('Status Code: ${response.statusCode}');
+        debugPrint('Response Body: ${response.body}');
+
+        if (response.body != null) {
+          final resData = response.body;
+          Map<String, dynamic> dataMap;
+          if (resData is String) {
+            dataMap = Map<String, dynamic>.from(jsonDecode(resData));
+          } else if (resData is Map) {
+            dataMap = Map<String, dynamic>.from(resData);
+          } else {
+            dataMap = {};
+          }
+
+          final String msg =
+              dataMap['message']?.toString() ?? 'Logged out successfully.';
+          showToast(msg.tr, title: 'Success');
+        } else {
+          showToast('Logged out successfully.'.tr, title: 'Success');
+        }
+      } catch (e) {
+        debugPrint('Error calling logout API: $e');
+        showToast('Logged out successfully.'.tr, title: 'Success');
+      }
+
       await prefs.clear();
 
       userName.value = 'John Doe';

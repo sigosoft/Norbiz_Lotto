@@ -9,7 +9,9 @@ import 'game_controller.dart';
 import 'localization_controller.dart';
 import 'auth_controller.dart';
 import 'bet_history_controller.dart';
+import 'results_controller.dart';
 import '../views/game/borlette_view.dart';
+
 
 class HomeController extends GetxController {
   // Navigation
@@ -394,7 +396,18 @@ class HomeController extends GetxController {
   void changeNavIndex(int index) {
     debugPrint('=== changeNavIndex called with index: $index ===');
     currentNavIndex.value = index;
-    if (index == 2) {
+    if (index == 1) {
+      try {
+        if (Get.isRegistered<ResultsController>()) {
+          Get.find<ResultsController>().fetchDrawResults();
+        } else {
+          final resultsController = Get.put(ResultsController());
+          resultsController.fetchDrawResults();
+        }
+      } catch (e) {
+        debugPrint('Error triggering fetchDrawResults: $e');
+      }
+    } else if (index == 2) {
       try {
         if (Get.isRegistered<BetHistoryController>()) {
           Get.find<BetHistoryController>().fetchBetHistory();

@@ -1,11 +1,14 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart' as launcher;
 import '../models/bank_model.dart';
 import '../models/transaction_model.dart';
 import 'auth_controller.dart';
 import 'localization_controller.dart';
+import 'connectivity_controller.dart';
 import '../configs/toast.dart';
 import '../configs/api_config.dart';
 
@@ -54,6 +57,24 @@ class AccountController extends GetxController {
   var under18ContentFr = ''.obs;
   var under18ContentHt = ''.obs;
 
+  // General Settings
+  var isGeneralLoading = false.obs;
+  var facebookUrl = ''.obs;
+  var twitterUrl = ''.obs;
+  var instagramUrl = ''.obs;
+  var whatsappUrl = ''.obs;
+  var whatsappNumber = ''.obs;
+  var contactEmail = ''.obs;
+  var appAddress = ''.obs;
+  var workingHoursStart = ''.obs;
+  var workingHoursEnd = ''.obs;
+  var androidVersion = ''.obs;
+  var iosVersion = ''.obs;
+  var isAndroidForceUpdate = false.obs;
+  var isIosForceUpdate = false.obs;
+  var isAndroidMaintenance = false.obs;
+  var isIosMaintenance = false.obs;
+
   // Bank Accounts Loading
   var isBankLoading = false.obs;
 
@@ -69,6 +90,7 @@ class AccountController extends GetxController {
       final authController = Get.find<AuthController>();
       authController.fetchProfile();
       authController.fetchWallet();
+      fetchGeneralSettings();
     } catch (e, stack) {
       debugPrint('Error on init AccountController: $e');
       debugPrintStack(stackTrace: stack);
@@ -268,10 +290,7 @@ class AccountController extends GetxController {
 
       final String url = '${ApiConfig.baseUrl}${ApiConfig.deleteBankAccount}';
 
-      final Map<String, String> body = {
-        'id': id,
-        'bank_account_id': id,
-      };
+      final Map<String, String> body = {'id': id, 'bank_account_id': id};
 
       debugPrint('=== DELETE BANK ACCOUNT API CALL ===');
       debugPrint('URL: $url');
@@ -447,29 +466,93 @@ class AccountController extends GetxController {
   }
 
   // Wallet deposits/withdrawals simulation
-  void depositFunds(double amount) {
-    final authController = Get.find<AuthController>();
-    authController.userWalletBalance.value += amount;
+  // Wallet deposits/withdrawals API integration
+  Future<bool> depositFunds(double amount) async {
+    try {
+      final connect = GetConnect();
+      connect.timeout = const Duration(seconds: 15);
 
-    // Add transaction record
-    allTransactions.insert(
-      0,
-      TransactionModel(
-        id: 'tx_${DateTime.now().millisecondsSinceEpoch}',
-        type: TransactionType.deposit,
-        title: 'Bank Deposit',
-        date: 'MAR 11, 2026 • 2:00 PM',
-        amount: amount,
-        status: TransactionStatus.completed,
-      ),
-    );
-    filterTransactions();
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      final Map<String, String> headers = {};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
 
-    showToast(
-      'Amount of \$${amount.toStringAsFixed(2)} has been added to your wallet.'
-          .tr,
-      title: 'Deposit Successful',
-    );
+      final String url =
+          '${ApiConfig.baseUrl}${ApiConfig.walletTopup}?amount=$amount';
+
+      debugPrint('=== DEPOSIT FUNDS API CALL ===');
+      debugPrint('URL: $url');
+      debugPrint('Headers: $headers');
+
+      final response = await connect.post(
+        url,
+        FormData({'amount': amount.toString()}),
+        headers: headers,
+      );
+
+      debugPrint('=== DEPOSIT FUNDS RESPONSE ===');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 200 && response.body != null) {
+        final resData = response.body;
+        Map<String, dynamic> dataMap;
+        if (resData is String) {
+          dataMap = Map<String, dynamic>.from(jsonDecode(resData));
+        } else if (resData is Map) {
+          dataMap = Map<String, dynamic>.from(resData);
+        } else {
+          showToast('Failed to parse response.'.tr, title: 'Error'.tr);
+          return false;
+        }
+
+        if (dataMap['status'] == 'true' ||
+            dataMap['status'] == true ||
+            dataMap['status'] == 'success') {
+          final data = dataMap['data'] != null
+              ? Map<String, dynamic>.from(dataMap['data'])
+              : <String, dynamic>{};
+          final wallet = data['wallet'] != null
+              ? Map<String, dynamic>.from(data['wallet'])
+              : <String, dynamic>{};
+
+          if (wallet.isNotEmpty) {
+            final balance =
+                double.tryParse(wallet['balance']?.toString() ?? '') ?? 0.0;
+            final authController = Get.find<AuthController>();
+            authController.userWalletBalance.value = balance;
+            debugPrint('Wallet balance updated after topup: $balance');
+          }
+
+          // Fetch updated transactions list in the background
+          fetchTransactions().catchError((e) {
+            debugPrint('Error fetching transactions: $e');
+          });
+
+          Get.back(); // Navigate back to the previous screen first
+          showToast(
+            dataMap['message'] ?? 'Topup successful.'.tr,
+            title: 'Success'.tr,
+          );
+          return true;
+        } else {
+          showToast(
+            dataMap['message'] ?? 'Deposit failed.'.tr,
+            title: 'Error'.tr,
+          );
+          return false;
+        }
+      } else {
+        showToast('Failed to connect to the server.'.tr, title: 'Error'.tr);
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Error depositing funds: $e');
+      showToast('An error occurred. Please try again.'.tr, title: 'Error'.tr);
+      return false;
+    }
   }
 
   bool withdrawFunds(double amount) {
@@ -769,7 +852,8 @@ class AccountController extends GetxController {
             for (var item in rawData) {
               if (item is Map) {
                 final String accId = item['id']?.toString() ?? '';
-                final String localCurrency = prefs.getString('bank_currency_$accId') ??
+                final String localCurrency =
+                    prefs.getString('bank_currency_$accId') ??
                     item['currency']?.toString() ??
                     item['currency_code']?.toString() ??
                     'USD';
@@ -918,6 +1002,268 @@ class AccountController extends GetxController {
       isTransactionsLoading.value = false;
       debugPrint('Error fetching transactions: $e');
       debugPrintStack(stackTrace: stackTrace);
+    }
+  }
+
+  Future<void> fetchGeneralSettings() async {
+    isGeneralLoading.value = true;
+    try {
+      final connect = GetConnect();
+      connect.timeout = const Duration(seconds: 15);
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      final Map<String, String> headers = {};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final String url = '${ApiConfig.baseUrl}${ApiConfig.general}';
+      debugPrint('=== FETCH GENERAL SETTINGS API CALL ===');
+      debugPrint('URL: $url');
+
+      final response = await connect.get(url, headers: headers);
+
+      debugPrint('=== FETCH GENERAL SETTINGS RESPONSE ===');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      isGeneralLoading.value = false;
+
+      if (response.statusCode == 200 && response.body != null) {
+        final resData = response.body;
+        Map<String, dynamic> dataMap;
+        if (resData is String) {
+          dataMap = Map<String, dynamic>.from(jsonDecode(resData));
+        } else if (resData is Map) {
+          dataMap = Map<String, dynamic>.from(resData);
+        } else {
+          return;
+        }
+
+        if (dataMap['status'] == 'true' || dataMap['status'] == true) {
+          final data = dataMap['data'] != null
+              ? Map<String, dynamic>.from(dataMap['data'])
+              : <String, dynamic>{};
+
+          final general = data['general'] != null
+              ? Map<String, dynamic>.from(data['general'])
+              : <String, dynamic>{};
+
+          facebookUrl.value = general['facebook']?.toString() ?? '';
+          twitterUrl.value = general['twitter']?.toString() ?? '';
+          instagramUrl.value = general['instagram']?.toString() ?? '';
+          whatsappUrl.value = general['whatsapp']?.toString() ?? '';
+          whatsappNumber.value = general['whatsapp_number']?.toString() ?? '';
+          contactEmail.value = general['email']?.toString() ?? '';
+          appAddress.value = general['address']?.toString() ?? '';
+          workingHoursStart.value =
+              general['working_hours_start']?.toString() ?? '';
+          workingHoursEnd.value =
+              general['working_hours_end']?.toString() ?? '';
+
+          androidVersion.value = general['version_android']?.toString() ?? '';
+          iosVersion.value = general['version_ios']?.toString() ?? '';
+          isAndroidForceUpdate.value =
+              (general['force_update_android'] == 1 ||
+              general['force_update_android'] == '1');
+          isIosForceUpdate.value =
+              (general['force_update_ios'] == 1 ||
+              general['force_update_ios'] == '1');
+          isAndroidMaintenance.value =
+              (general['maintenance_android'] == 1 ||
+              general['maintenance_android'] == '1');
+          isIosMaintenance.value =
+              (general['maintenance_ios'] == 1 ||
+              general['maintenance_ios'] == '1');
+
+          // Sync with connectivity controller
+          try {
+            final connectivityController = Get.find<ConnectivityController>();
+            bool isMaintenanceActive = false;
+            bool isUpdateRequiredActive = false;
+            if (Platform.isAndroid) {
+              isMaintenanceActive = isAndroidMaintenance.value;
+              isUpdateRequiredActive = isAndroidForceUpdate.value;
+            } else if (Platform.isIOS) {
+              isMaintenanceActive = isIosMaintenance.value;
+              isUpdateRequiredActive = isIosForceUpdate.value;
+            }
+            connectivityController.isMaintenance.value = isMaintenanceActive;
+            connectivityController.isUpdateRequired.value =
+                isUpdateRequiredActive;
+          } catch (e) {
+            debugPrint('Error syncing connectivity controller: $e');
+          }
+        }
+      }
+    } catch (e) {
+      isGeneralLoading.value = false;
+      debugPrint('Error fetching general settings: $e');
+    }
+  }
+
+  Future<void> launchURL(String urlString) async {
+    if (urlString.isEmpty) return;
+    try {
+      final Uri url = Uri.parse(urlString);
+      // Try to launch external application directly to support Android 11+ query limitations
+      bool launched = await launcher.launchUrl(
+        url,
+        mode: launcher.LaunchMode.externalApplication,
+      );
+      if (!launched) {
+        debugPrint(
+          'Could not launch $urlString via externalApplication, trying fallback...',
+        );
+        await launcher.launchUrl(url);
+      }
+    } catch (e) {
+      debugPrint('Error launching url $urlString: $e');
+      try {
+        final Uri url = Uri.parse(urlString);
+        await launcher.launchUrl(url);
+      } catch (err) {
+        debugPrint('Fallback launch url failed: $err');
+      }
+    }
+  }
+
+  Future<void> launchWhatsApp(String number, String fallbackUrl) async {
+    if (number.isNotEmpty) {
+      final String formattedNumber = number.replaceAll(RegExp(r'[^0-9]'), '');
+      final String waUrl = "https://wa.me/$formattedNumber";
+      await launchURL(waUrl);
+    } else if (fallbackUrl.isNotEmpty) {
+      await launchURL(fallbackUrl);
+    } else {
+      await launchURL("https://wa.me/11234567800");
+    }
+  }
+
+  Future<void> checkForUpdateManual() async {
+    showToast('Checking for updates...'.tr, title: 'System Update');
+    await fetchGeneralSettings();
+
+    String apiVersion = '1.0.0';
+    if (Platform.isAndroid) {
+      apiVersion = androidVersion.value;
+    } else if (Platform.isIOS) {
+      apiVersion = iosVersion.value;
+    }
+
+    const String currentVersion = '2.8.1';
+    bool hasUpdate = false;
+    try {
+      if (apiVersion.isNotEmpty) {
+        final apiParts = apiVersion
+            .split('.')
+            .map((e) => int.tryParse(e) ?? 0)
+            .toList();
+        final currParts = currentVersion
+            .split('.')
+            .map((e) => int.tryParse(e) ?? 0)
+            .toList();
+
+        for (int i = 0; i < apiParts.length; i++) {
+          int currVal = i < currParts.length ? currParts[i] : 0;
+          if (apiParts[i] > currVal) {
+            hasUpdate = true;
+            break;
+          } else if (apiParts[i] < currVal) {
+            break;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error parsing version: $e');
+    }
+
+    if (hasUpdate) {
+      Get.snackbar(
+        'Update Available'.tr,
+        'A new version (v$apiVersion) is available. Please update.'.tr,
+        backgroundColor: Colors.white.withOpacity(0.9),
+        colorText: const Color(0xFF0D319C),
+        duration: const Duration(seconds: 4),
+      );
+    } else {
+      Get.snackbar(
+        'System Update'.tr,
+        'You are running the latest version.'.tr,
+        backgroundColor: Colors.white.withOpacity(0.9),
+        colorText: const Color(0xFF0D319C),
+      );
+    }
+  }
+
+  Future<void> fetchHelpCenter() async {
+    isGeneralLoading.value = true;
+    try {
+      final connect = GetConnect();
+      connect.timeout = const Duration(seconds: 15);
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      final Map<String, String> headers = {};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final String url = '${ApiConfig.baseUrl}${ApiConfig.helpCenter}';
+      debugPrint('=== FETCH HELP CENTER API CALL ===');
+      debugPrint('URL: $url');
+
+      final response = await connect.get(url, headers: headers);
+
+      debugPrint('=== FETCH HELP CENTER RESPONSE ===');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      isGeneralLoading.value = false;
+
+      if (response.statusCode == 200 && response.body != null) {
+        final resData = response.body;
+        Map<String, dynamic> dataMap;
+        if (resData is String) {
+          dataMap = Map<String, dynamic>.from(jsonDecode(resData));
+        } else if (resData is Map) {
+          dataMap = Map<String, dynamic>.from(resData);
+        } else {
+          return;
+        }
+
+        if (dataMap['status'] == 'true' || dataMap['status'] == true) {
+          final data = dataMap['data'] != null
+              ? Map<String, dynamic>.from(dataMap['data'])
+              : <String, dynamic>{};
+
+          final helpCenter = data['help_center'] != null
+              ? Map<String, dynamic>.from(data['help_center'])
+              : <String, dynamic>{};
+
+          if (helpCenter.isNotEmpty) {
+            final whatsapp = helpCenter['whatsapp'] != null
+                ? Map<String, dynamic>.from(helpCenter['whatsapp'])
+                : <String, dynamic>{};
+
+            whatsappNumber.value = whatsapp['number']?.toString() ?? '';
+            whatsappUrl.value = whatsapp['link']?.toString() ?? '';
+            contactEmail.value = helpCenter['email']?.toString() ?? '';
+            appAddress.value = helpCenter['address']?.toString() ?? '';
+
+            final businessHours = helpCenter['business_hours'] != null
+                ? Map<String, dynamic>.from(helpCenter['business_hours'])
+                : <String, dynamic>{};
+
+            workingHoursStart.value = businessHours['start']?.toString() ?? '';
+            workingHoursEnd.value = businessHours['end']?.toString() ?? '';
+          }
+        }
+      }
+    } catch (e) {
+      isGeneralLoading.value = false;
+      debugPrint('Error fetching help center: $e');
     }
   }
 }

@@ -4884,6 +4884,7 @@ class HelpCenterView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizationController = Get.find<LocalizationController>();
+    final accountController = Get.find<AccountController>();
 
     return Obx(() {
       final textDirection = localizationController.textDirection;
@@ -4985,6 +4986,7 @@ class HelpCenterView extends StatelessWidget {
   }
 
   Widget _buildWhatsAppCard() {
+    final accountController = Get.find<AccountController>();
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -5042,9 +5044,9 @@ class HelpCenterView extends StatelessWidget {
             height: 48,
             child: ElevatedButton(
               onPressed: () {
-                showToast(
-                  'Redirecting to WhatsApp chat...',
-                  title: 'WhatsApp Support',
+                accountController.launchWhatsApp(
+                  accountController.whatsappNumber.value,
+                  accountController.whatsappUrl.value,
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -5065,6 +5067,7 @@ class HelpCenterView extends StatelessWidget {
   }
 
   Widget _buildEmailCard() {
+    final accountController = Get.find<AccountController>();
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -5122,7 +5125,10 @@ class HelpCenterView extends StatelessWidget {
             height: 48,
             child: ElevatedButton(
               onPressed: () {
-                showToast('Opening email composer...', title: 'Email Support');
+                final email = accountController.contactEmail.value.isNotEmpty
+                    ? accountController.contactEmail.value
+                    : "support@norbizlotto.com";
+                accountController.launchURL("mailto:$email");
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFE9900),
@@ -5142,6 +5148,19 @@ class HelpCenterView extends StatelessWidget {
   }
 
   Widget _buildSupportInfoCard() {
+    final accountController = Get.find<AccountController>();
+    final businessHours =
+        (accountController.workingHoursStart.value.isNotEmpty &&
+            accountController.workingHoursEnd.value.isNotEmpty)
+        ? "Available ${accountController.workingHoursStart.value} - ${accountController.workingHoursEnd.value}"
+        : 'Available 9 AM - 10 PM';
+    final waNumber = accountController.whatsappNumber.value.isNotEmpty
+        ? accountController.whatsappNumber.value
+        : '+1 1234567800';
+    final supportEmail = accountController.contactEmail.value.isNotEmpty
+        ? accountController.contactEmail.value
+        : 'support@norbizlotto.com';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -5175,7 +5194,7 @@ class HelpCenterView extends StatelessWidget {
               size: 24,
             ),
             title: 'Business Hours',
-            subtitle: 'Available 9 AM - 10 PM',
+            subtitle: businessHours,
           ),
           const SizedBox(height: 20),
           _buildInfoRow(
@@ -5186,7 +5205,7 @@ class HelpCenterView extends StatelessWidget {
               fit: BoxFit.contain,
             ),
             title: 'WhatsApp',
-            subtitle: '+1 1234567800',
+            subtitle: waNumber,
           ),
           const SizedBox(height: 20),
           _buildInfoRow(
@@ -5197,7 +5216,7 @@ class HelpCenterView extends StatelessWidget {
               fit: BoxFit.contain,
             ),
             title: 'Support Email',
-            subtitle: 'support@norbizlotto.com',
+            subtitle: supportEmail,
           ),
         ],
       ),
@@ -5538,6 +5557,349 @@ class ChangePasswordView extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ------------------------------------------------------------
+// 6. Deposit Funds View
+// ------------------------------------------------------------
+class DepositFundsView extends StatefulWidget {
+  const DepositFundsView({Key? key}) : super(key: key);
+
+  @override
+  State<DepositFundsView> createState() => _DepositFundsViewState();
+}
+
+class _DepositFundsViewState extends State<DepositFundsView> {
+  final TextEditingController _amountController = TextEditingController();
+  final List<double> _predefinedAmounts = [500, 1000, 2000, 5000, 7000, 10000];
+  double? _selectedAmount;
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  void _selectAmount(double amount) {
+    setState(() {
+      _selectedAmount = amount;
+      _amountController.text = amount.toInt().toString();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final localizationController = Get.find<LocalizationController>();
+    final accountController = Get.find<AccountController>();
+
+    return Directionality(
+      textDirection: localizationController.textDirection,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: AppTheme.pageBackgroundGradient,
+          ),
+          child: SafeArea(
+            child: Column(
+              children: [
+                // Custom Header Row
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 12.0,
+                  ),
+                  height: 62,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: GestureDetector(
+                          onTap: () => Get.back(),
+                          child: Container(
+                            height: 38,
+                            width: 38,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.03),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.chevron_left_rounded,
+                              color: Color(0xFF0F172A),
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const Text(
+                        'Deposit Funds',
+                        style: TextStyle(
+                          color: Color(0xFF0F172A),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                    child: Column(
+                      children: [
+                        // Deposit Amount Card
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 16,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 4,
+                                    height: 18,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF002C8B),
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'Deposit Amount',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      color: Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              // Predefined grid of amounts (3 columns)
+                              GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 3,
+                                      crossAxisSpacing: 12,
+                                      mainAxisSpacing: 12,
+                                      childAspectRatio: 2.3,
+                                    ),
+                                itemCount: _predefinedAmounts.length,
+                                itemBuilder: (context, index) {
+                                  final amount = _predefinedAmounts[index];
+                                  final isSelected = _selectedAmount == amount;
+                                  final displayVal =
+                                      amount == 1000 ||
+                                          amount == 2000 ||
+                                          amount == 5000 ||
+                                          amount == 7000 ||
+                                          amount == 10000
+                                      ? '${amount.toInt().toString().substring(0, amount.toInt().toString().length - 3)},000'
+                                      : amount.toInt().toString();
+
+                                  return GestureDetector(
+                                    onTap: () => _selectAmount(amount),
+                                    child: Container(
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? const Color(0xFFFFF7ED)
+                                            : Colors.white,
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: isSelected
+                                              ? const Color(0xFFFE9900)
+                                              : const Color(
+                                                  0xFFFE9900,
+                                                ).withOpacity(0.3),
+                                          width: isSelected ? 1.5 : 1.0,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        displayVal,
+                                        style: TextStyle(
+                                          color: const Color(0xFF64748B),
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 20),
+                              // Custom Amount TextField
+                              Container(
+                                height: 54,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(24),
+                                  border: Border.all(
+                                    color: const Color(
+                                      0xFFFE9900,
+                                    ).withOpacity(0.4),
+                                    width: 1.0,
+                                  ),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                alignment: Alignment.center,
+                                child: TextField(
+                                  controller: _amountController,
+                                  keyboardType: TextInputType.number,
+                                  onChanged: (val) {
+                                    setState(() {
+                                      final parsed = double.tryParse(
+                                        val.replaceAll(',', ''),
+                                      );
+                                      _selectedAmount = parsed;
+                                    });
+                                  },
+                                  style: const TextStyle(
+                                    color: Color(0xFF0F172A),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 15,
+                                  ),
+                                  decoration: const InputDecoration(
+                                    hintText: 'Enter custom amount',
+                                    hintStyle: TextStyle(
+                                      color: Color(0xFF94A3B8),
+                                      fontSize: 14,
+                                    ),
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                        // Submit Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              final text = _amountController.text.replaceAll(
+                                ',',
+                                '',
+                              );
+                              final amount = double.tryParse(text) ?? 0.0;
+                              if (amount > 0) {
+                                Get.dialog(
+                                  AlertDialog(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    title: Text(
+                                      'Confirm Deposit'.tr,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    content: Text(
+                                      '${'Are you sure you want to deposit'.tr} \$${amount.toStringAsFixed(2)}?',
+                                      style: const TextStyle(
+                                        color: Color(0xFF64748B),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Get.back(),
+                                        child: Text(
+                                          'Cancel'.tr,
+                                          style: const TextStyle(color: Colors.grey),
+                                        ),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () async {
+                                          Get.back();
+                                          await Future.delayed(const Duration(milliseconds: 150));
+                                          accountController.depositFunds(amount);
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFFFE9900),
+                                          minimumSize: const Size(80, 38),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                        ),
+                                        child: Text('ok'.tr),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              } else {
+                                showToast(
+                                  'Please enter a valid deposit amount.',
+                                  title: 'Error',
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFE9900),
+                              foregroundColor: Colors.white,
+                              shape: const StadiumBorder(),
+                              elevation: 0,
+                            ),
+                            child: const Text(
+                              'Submit',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

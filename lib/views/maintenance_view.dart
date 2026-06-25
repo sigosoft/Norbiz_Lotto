@@ -20,7 +20,10 @@ class MaintenanceView extends StatelessWidget {
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: IntrinsicHeight(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24.0,
+                      vertical: 16.0,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -62,14 +65,24 @@ class MaintenanceView extends StatelessWidget {
                         const SizedBox(height: 12),
                         // Subtitle
                         Center(
-                          child: Text(
-                            "sorry, we're down for maintenance we'll be back up shortly.".tr,
-                            style: const TextStyle(
-                              color: Color(0xFF64748B),
-                              fontSize: 14,
-                              height: 1.4,
+                          child: Obx(
+                            () => Text(
+                              connectivityController
+                                      .serverDownReason
+                                      .value
+                                      .isNotEmpty
+                                  ? connectivityController
+                                        .serverDownReason
+                                        .value
+                                  : "sorry, we're down for maintenance we'll be back up shortly."
+                                        .tr,
+                              style: const TextStyle(
+                                color: Color(0xFF64748B),
+                                fontSize: 14,
+                                height: 1.4,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                         const Spacer(flex: 2),

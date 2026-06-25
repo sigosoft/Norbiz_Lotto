@@ -30,6 +30,15 @@ class ApiConfig {
   static const String ticketsPurchase = "tickets/purchase";
   static const String wallet = "wallet";
   static const String walletTransactions = "wallet/transactions";
+  static const String walletTopup = "wallet/topup";
   static const String upcomingDraws = "draws/upcoming";
   static const String ticketsPlay = "tickets/play";
+  static const String general = "general";
+  static const String logout = "logout";
+  static const String tchalaSearch = "tchala/search";
+  static const String gamesRules = "games/rules";
+  static const String ticketsValidate = "tickets/validate";
+  static const String helpCenter = "help-center";
+  static const String notifications = "notifications";
+  static const String resultsShow = "results/show";
 }

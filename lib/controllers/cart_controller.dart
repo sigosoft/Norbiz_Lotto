@@ -307,6 +307,87 @@ class CartController extends GetxController {
     return true;
   }
 
+  Future<bool> validateTicket({
+    required int drawId,
+    required int gameTypeId,
+    required String numberPrimary,
+    required String numberSecondary,
+    required double betAmount,
+  }) async {
+    isLoading.value = true;
+    try {
+      final connect = GetConnect();
+      connect.timeout = const Duration(seconds: 15);
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      final Map<String, String> headers = {};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final Map<String, dynamic> body = {
+        'draw_id': drawId.toString(),
+        'game_type_id': gameTypeId.toString(),
+        'number_primary': numberPrimary,
+        'number_secondary': numberSecondary,
+        'bet_amount': betAmount.toString(),
+      };
+
+      final String url = '${ApiConfig.baseUrl}${ApiConfig.ticketsValidate}';
+      debugPrint('=== VALIDATE TICKET API CALL ===');
+      debugPrint('URL: $url');
+      debugPrint('Token: $token');
+      debugPrint('Headers: $headers');
+      debugPrint('Body: $body');
+
+      final response = await connect.post(
+        url,
+        FormData(body),
+        headers: headers,
+      );
+
+      debugPrint('=== VALIDATE TICKET RESPONSE ===');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 200 && response.body != null) {
+        final dynamic resData = response.body;
+        Map<String, dynamic> dataMap;
+        if (resData is String) {
+          dataMap = Map<String, dynamic>.from(jsonDecode(resData));
+        } else if (resData is Map) {
+          dataMap = Map<String, dynamic>.from(resData);
+        } else {
+          debugPrint('Unexpected response body type: ${resData.runtimeType}');
+          return false;
+        }
+
+        if (dataMap['status'] == 'true' || dataMap['status'] == true) {
+          return true;
+        } else {
+          final errMsg = _parseErrorMessage(dataMap['message']);
+          showToast(errMsg, title: 'Error');
+          return false;
+        }
+      } else {
+        final dynamic resData = response.body;
+        String errMsg = 'Validation failed. Please try again.';
+        if (resData != null && resData is Map && resData['message'] != null) {
+          errMsg = _parseErrorMessage(resData['message']);
+        }
+        showToast(errMsg, title: 'Error');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Error validating ticket: $e');
+      showToast('Validation connection error: $e', title: 'Error');
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   Future<Map<String, dynamic>?> purchaseTicket({
     required int drawId,
     required int gameTypeId,

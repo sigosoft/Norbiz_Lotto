@@ -222,7 +222,7 @@ class AccountView extends StatelessWidget {
                       ),
                       child: ElevatedButton(
                         onPressed: () =>
-                            _showDepositDialog(context, accountController),
+                            Get.to(() => const DepositFundsView()),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF002C8B),
                           foregroundColor: Colors.white,
@@ -412,63 +412,90 @@ class AccountView extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // Facebook
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          width: 36,
-          height: 36,
-          alignment: Alignment.center,
-          child: Image.asset(
-            "lib/assets/images/Facebook.png",
-            width: 35,
-            height: 35,
+        GestureDetector(
+          onTap: () => accountController.launchURL(
+            accountController.facebookUrl.value.isNotEmpty
+                ? accountController.facebookUrl.value
+                : "https://www.facebook.com",
+          ),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            width: 36,
+            height: 36,
+            alignment: Alignment.center,
+            child: Image.asset(
+              "lib/assets/images/Facebook.png",
+              width: 35,
+              height: 35,
+            ),
           ),
         ),
         // Instagram
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          width: 39,
-          height: 39,
-          alignment: Alignment.center,
-          child: Image.asset(
-            "lib/assets/images/Instagram.png",
+        GestureDetector(
+          onTap: () => accountController.launchURL(
+            accountController.instagramUrl.value.isNotEmpty
+                ? accountController.instagramUrl.value
+                : "https://www.instagram.com",
+          ),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8),
             width: 39,
             height: 39,
+            alignment: Alignment.center,
+            child: Image.asset(
+              "lib/assets/images/Instagram.png",
+              width: 39,
+              height: 39,
+            ),
           ),
         ),
         // LinkedIn
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          width: 36,
-          height: 36,
-          alignment: Alignment.center,
-          child: Image.asset(
-            "lib/assets/images/LinkedIn.png",
-            width: 35,
-            height: 35,
+        GestureDetector(
+          onTap: () => accountController.launchURL("https://www.linkedin.com"),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            width: 36,
+            height: 36,
+            alignment: Alignment.center,
+            child: Image.asset(
+              "lib/assets/images/LinkedIn.png",
+              width: 35,
+              height: 35,
+            ),
           ),
         ),
         // Twitter/X
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          width: 36,
-          height: 36,
-          alignment: Alignment.center,
-          child: Image.asset(
-            "lib/assets/images/Twitter.png",
-            width: 32,
-            height: 32,
+        GestureDetector(
+          onTap: () => accountController.launchURL(
+            accountController.twitterUrl.value.isNotEmpty
+                ? accountController.twitterUrl.value
+                : "https://www.twitter.com",
+          ),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            width: 36,
+            height: 36,
+            alignment: Alignment.center,
+            child: Image.asset(
+              "lib/assets/images/Twitter.png",
+              width: 32,
+              height: 32,
+            ),
           ),
         ),
         // YouTube
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          width: 36,
-          height: 36,
-          alignment: Alignment.center,
-          child: Image.asset(
-            "lib/assets/images/YouTube.png",
+        GestureDetector(
+          onTap: () => accountController.launchURL("https://www.youtube.com"),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8),
             width: 36,
             height: 36,
+            alignment: Alignment.center,
+            child: Image.asset(
+              "lib/assets/images/YouTube.png",
+              width: 36,
+              height: 36,
+            ),
           ),
         ),
       ],
@@ -490,12 +517,7 @@ class AccountView extends StatelessWidget {
           const SizedBox(height: 4),
           GestureDetector(
             onTap: () {
-              Get.snackbar(
-                'System Update',
-                'You are running the latest version.',
-                backgroundColor: Colors.white.withOpacity(0.9),
-                colorText: const Color(0xFF0D319C),
-              );
+              accountController.checkForUpdateManual();
             },
             child: const Text(
               'Check for update',
@@ -639,8 +661,10 @@ class AccountView extends StatelessWidget {
                                         height: 24,
                                       ),
                                       title: 'help_center'.tr,
-                                      onTap: () =>
-                                          Get.to(() => const HelpCenterView()),
+                                      onTap: () {
+                                        accountController.fetchHelpCenter();
+                                        Get.to(() => const HelpCenterView());
+                                      },
                                     ),
                                   ],
                                 ),

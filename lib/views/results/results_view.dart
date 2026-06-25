@@ -274,6 +274,14 @@ class ResultsView extends StatelessWidget {
                   // List Results
                   Expanded(
                     child: Obx(() {
+                      if (resultsController.isLoading.value) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFFFE9900),
+                          ),
+                        );
+                      }
+
                       final list = resultsController.filteredResults;
                       if (list.isEmpty) {
                         return Center(

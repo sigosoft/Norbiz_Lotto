@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart' as launcher;
 import '../controllers/connectivity_controller.dart';
 
 class UpdateView extends StatelessWidget {
@@ -62,10 +64,22 @@ class UpdateView extends StatelessWidget {
                           width: double.infinity,
                           height: 48,
                           child: ElevatedButton(
-                            onPressed: () {
-                              // For demo/testing, dismiss the screen when clicking Update
-                              connectivityController.isUpdateRequired.value = false;
-                              Get.back();
+                            onPressed: () async {
+                              final String packageName = "com.example.norbiz_loto";
+                              final Uri url = Platform.isAndroid
+                                  ? Uri.parse("https://play.google.com/store/apps/details?id=" + packageName)
+                                  : Uri.parse("https://apps.apple.app/app/id1234567895");
+                              try {
+                                bool launched = await launcher.launchUrl(url, mode: launcher.LaunchMode.externalApplication);
+                                if (!launched) {
+                                  await launcher.launchUrl(url);
+                                }
+                              } catch (e) {
+                                debugPrint('Error launching store url: $e');
+                                try {
+                                  await launcher.launchUrl(url);
+                                } catch (_) {}
+                              }
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFFE9900),
