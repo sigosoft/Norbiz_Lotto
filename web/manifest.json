@@ -1,6 +1,6 @@
 {
-    "name": "norbiz_loto",
-    "short_name": "norbiz_loto",
+    "name": "Norbiz Lotto",
+    "short_name": "Norbiz Lotto",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
