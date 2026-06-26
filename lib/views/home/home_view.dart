@@ -211,9 +211,20 @@ class HomeView extends StatelessWidget {
                       children: [
                         headerRow,
                         const SizedBox(height: 20),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Column(
+                        Obx(() {
+                          if (homeController.isLoading.value) {
+                            return SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.6,
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  color: Color(0xFFFE9900),
+                                ),
+                              ),
+                            );
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               bannerCarousel,
@@ -635,21 +646,11 @@ class HomeView extends StatelessWidget {
                               }),
                             ],
                           ),
-                        ),
+                        );
+                      }),
                       ],
                     ),
                   ),
-                  if (homeController.isLoading.value)
-                    Positioned.fill(
-                      child: Container(
-                        color: Colors.white.withOpacity(0.3),
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            color: Color(0xFF0D319C),
-                          ),
-                        ),
-                      ),
-                    ),
                 ],
               ),
             ),

@@ -221,8 +221,7 @@ class AccountView extends StatelessWidget {
                         ],
                       ),
                       child: ElevatedButton(
-                        onPressed: () =>
-                            Get.to(() => const DepositFundsView()),
+                        onPressed: () => Get.to(() => const DepositFundsView()),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF002C8B),
                           foregroundColor: Colors.white,
@@ -551,133 +550,144 @@ class AccountView extends StatelessWidget {
                 children: [
                   customHeaderRow,
                   Expanded(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          profileHeader,
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-                            ),
-                            child: Column(
-                              children: [
-                                const SizedBox(height: 16),
-                                walletCard,
-                                const SizedBox(height: 20),
-                                shortcutButtons,
-                                const SizedBox(height: 24),
-
-                                // Menu items list directly on background
-                                Column(
-                                  children: [
-                                    _buildMenuItem(
-                                      leading: Image.asset(
-                                        "lib/assets/images/AccountInfo.png",
-                                        width: 24,
-                                        height: 24,
-                                      ),
-                                      title: 'account_info'.tr,
-                                      onTap: () =>
-                                          Get.to(() => const AccountInfoView()),
-                                    ),
-                                    _buildMenuItem(
-                                      leading: Image.asset(
-                                        "lib/assets/images/Languages.png",
-                                        width: 24,
-                                        height: 24,
-                                      ),
-                                      title: 'language'.tr,
-                                      onTap: () => _showLanguageSelector(
-                                        context,
-                                        localizationController,
-                                      ),
-                                    ),
-                                    _buildMenuItem(
-                                      leading: Image.asset(
-                                        "lib/assets/images/change password.png",
-                                        width: 24,
-                                        height: 24,
-                                      ),
-                                      title: 'Change Password'.tr,
-                                      onTap: () => Get.to(
-                                        () => const ChangePasswordView(),
-                                      ),
-                                    ),
-                                    _buildMenuItem(
-                                      leading: Image.asset(
-                                        "lib/assets/images/PrivacyPolicy.png",
-                                        width: 24,
-                                        height: 24,
-                                      ),
-                                      title: 'privacy_policy'.tr,
-                                      onTap: () => Get.to(
-                                        () => const PolicyView(
-                                          policyType: 'privacy',
-                                        ),
-                                      ),
-                                    ),
-                                    _buildMenuItem(
-                                      leading: Image.asset(
-                                        "lib/assets/images/Terms&Conditions.png",
-                                        width: 24,
-                                        height: 24,
-                                      ),
-                                      title: 'terms_conditions'.tr,
-                                      onTap: () => Get.to(
-                                        () => const PolicyView(
-                                          policyType: 'terms',
-                                        ),
-                                      ),
-                                    ),
-                                    _buildMenuItem(
-                                      leading: Image.asset(
-                                        "lib/assets/images/AntiFraud.png",
-                                        width: 24,
-                                        height: 24,
-                                      ),
-                                      title: 'anti_fraud'.tr,
-                                      onTap: () => Get.to(
-                                        () => const PolicyView(
-                                          policyType: 'fraud',
-                                        ),
-                                      ),
-                                    ),
-                                    _buildMenuItem(
-                                      leading: Image.asset(
-                                        "lib/assets/images/Under-18.png",
-                                        width: 24,
-                                        height: 24,
-                                      ),
-                                      title: 'under_18'.tr,
-                                      onTap: () => Get.to(
-                                        () =>
-                                            const PolicyView(policyType: 'age'),
-                                      ),
-                                    ),
-                                    _buildMenuItem(
-                                      leading: Image.asset(
-                                        "lib/assets/images/HelpCenter.png",
-                                        width: 24,
-                                        height: 24,
-                                      ),
-                                      title: 'help_center'.tr,
-                                      onTap: () {
-                                        accountController.fetchHelpCenter();
-                                        Get.to(() => const HelpCenterView());
-                                      },
-                                    ),
-                                  ],
-                                ),
-
-                                logoutButton,
-                                socialMediaRow,
-                                versionFooter,
-                              ],
-                            ),
+                    child: Obx(() {
+                      if (authController.isProfileLoading.value) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFFFE9900),
                           ),
-                        ],
-                      ),
-                    ),
+                        );
+                      }
+                      return SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            profileHeader,
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                              ),
+                              child: Column(
+                                children: [
+                                  const SizedBox(height: 16),
+                                  walletCard,
+                                  const SizedBox(height: 20),
+                                  shortcutButtons,
+                                  const SizedBox(height: 24),
+
+                                  // Menu items list directly on background
+                                  Column(
+                                    children: [
+                                      _buildMenuItem(
+                                        leading: Image.asset(
+                                          "lib/assets/images/AccountInfo.png",
+                                          width: 24,
+                                          height: 24,
+                                        ),
+                                        title: 'account_info'.tr,
+                                        onTap: () => Get.to(
+                                          () => const AccountInfoView(),
+                                        ),
+                                      ),
+                                      _buildMenuItem(
+                                        leading: Image.asset(
+                                          "lib/assets/images/Languages.png",
+                                          width: 24,
+                                          height: 24,
+                                        ),
+                                        title: 'language'.tr,
+                                        onTap: () => _showLanguageSelector(
+                                          context,
+                                          localizationController,
+                                        ),
+                                      ),
+                                      _buildMenuItem(
+                                        leading: Image.asset(
+                                          "lib/assets/images/change password.png",
+                                          width: 24,
+                                          height: 24,
+                                        ),
+                                        title: 'Change Password'.tr,
+                                        onTap: () => Get.to(
+                                          () => const ChangePasswordView(),
+                                        ),
+                                      ),
+                                      _buildMenuItem(
+                                        leading: Image.asset(
+                                          "lib/assets/images/PrivacyPolicy.png",
+                                          width: 24,
+                                          height: 24,
+                                        ),
+                                        title: 'privacy_policy'.tr,
+                                        onTap: () => Get.to(
+                                          () => const PolicyView(
+                                            policyType: 'privacy',
+                                          ),
+                                        ),
+                                      ),
+                                      _buildMenuItem(
+                                        leading: Image.asset(
+                                          "lib/assets/images/Terms&Conditions.png",
+                                          width: 24,
+                                          height: 24,
+                                        ),
+                                        title: 'terms_conditions'.tr,
+                                        onTap: () => Get.to(
+                                          () => const PolicyView(
+                                            policyType: 'terms',
+                                          ),
+                                        ),
+                                      ),
+                                      _buildMenuItem(
+                                        leading: Image.asset(
+                                          "lib/assets/images/AntiFraud.png",
+                                          width: 24,
+                                          height: 24,
+                                        ),
+                                        title: 'anti_fraud'.tr,
+                                        onTap: () => Get.to(
+                                          () => const PolicyView(
+                                            policyType: 'fraud',
+                                          ),
+                                        ),
+                                      ),
+                                      _buildMenuItem(
+                                        leading: Image.asset(
+                                          "lib/assets/images/Under-18.png",
+                                          width: 24,
+                                          height: 24,
+                                        ),
+                                        title: 'under_18'.tr,
+                                        onTap: () => Get.to(
+                                          () => const PolicyView(
+                                            policyType: 'age',
+                                          ),
+                                        ),
+                                      ),
+                                      _buildMenuItem(
+                                        leading: Image.asset(
+                                          "lib/assets/images/HelpCenter.png",
+                                          width: 24,
+                                          height: 24,
+                                        ),
+                                        title: 'help_center'.tr,
+                                        onTap: () {
+                                          accountController.fetchHelpCenter();
+                                          Get.to(() => const HelpCenterView());
+                                        },
+                                      ),
+                                    ],
+                                  ),
+
+                                  logoutButton,
+                                  socialMediaRow,
+                                  versionFooter,
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
                   ),
                 ],
               ),

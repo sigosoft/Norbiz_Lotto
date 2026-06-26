@@ -100,15 +100,15 @@ class ResultsView extends StatelessWidget {
                       ),
                       child: TextField(
                         onChanged: resultsController.filterResults,
-                        decoration: const InputDecoration(
-                          hintText: 'Search by lottery or draw',
-                          hintStyle: TextStyle(
+                        decoration: InputDecoration(
+                          hintText: 'search_by_lottery_or_draw'.tr,
+                          hintStyle: const TextStyle(
                             color: Colors.grey,
                             fontSize: 13,
                           ),
-                          prefixIcon: Icon(Icons.search, color: Colors.grey),
+                          prefixIcon: const Icon(Icons.search, color: Colors.grey),
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(vertical: 14),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                       ),
                     ),

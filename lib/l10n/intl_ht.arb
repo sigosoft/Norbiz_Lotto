@@ -179,5 +179,20 @@
   "Maximum bet amount is $@max.": "Kantite maksimòm pari a se $@max.",
   "Please enter the 6-digit verification code.": "Silvouplè antre kòd verifikasyon 6 chif la.",
   "Enter Amount ($USD)": "Antre Kantite ($USD)",
-  "payout_label_format": "Peman: @label"
+  "payout_label_format": "Peman: @label",
+  "your_cart": "Panier Ou",
+  "current_wallet_balance": "Balans Kouran Wlèt",
+  "sufficient_balance": "Balans Sifizan",
+  "insufficient": "Balans lan pa ase",
+  "top_up_wallet": "Rechaje Wlèt",
+  "total_tickets": "Total Tikè",
+  "subtotal": "Sou-total",
+  "service_fee": "Frè Sèvis",
+  "total_amount": "Montant Total",
+  "potential_win": "Gany Potansyèl",
+  "bet_amount": "Montant Pari",
+  "confirm_bet": "Konfime Pari",
+  "search_by_lottery_or_draw": "Chache pa lotri oswa tiraj",
+  "no_match_found": "Pa jwenn anyen",
+  "resend_code_btn": "Voye Kòd ankò"
 }

@@ -424,9 +424,9 @@ class AccountInfoView extends StatelessWidget {
               Stack(
                 alignment: Alignment.center,
                 children: [
-                  const Text(
-                    'Delete Account',
-                    style: TextStyle(
+                  Text(
+                    'delete_account'.tr,
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 22,
                       color: Color(0xFF0F172A),
@@ -467,9 +467,9 @@ class AccountInfoView extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               // Subtitle
-              const Text(
-                'Are you sure you want to delete your account?',
-                style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+              Text(
+                'delete_confirm'.tr,
+                style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
@@ -487,9 +487,9 @@ class AccountInfoView extends StatelessWidget {
                           shape: const StadiumBorder(),
                           elevation: 0,
                         ),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(
+                        child: Text(
+                          'Cancel'.tr,
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
@@ -2518,7 +2518,7 @@ class _PolicyViewState extends State<PolicyView> {
         ? accountController.policyContentHt.value
         : accountController.policyContentEn.value;
 
-    final displayTitle = title.isNotEmpty ? title : 'Privacy Policy';
+    final displayTitle = title.isNotEmpty ? title : 'privacy_policy'.tr;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -2764,7 +2764,7 @@ class _PolicyViewState extends State<PolicyView> {
         ? accountController.termsContentHt.value
         : accountController.termsContentEn.value;
 
-    final displayTitle = title.isNotEmpty ? title : 'Terms & Conditions';
+    final displayTitle = title.isNotEmpty ? title : 'terms_conditions'.tr;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -3013,7 +3013,7 @@ class _PolicyViewState extends State<PolicyView> {
         ? accountController.fraudContentHt.value
         : accountController.fraudContentEn.value;
 
-    final displayTitle = title.isNotEmpty ? title : 'Anti-Fraud Policy';
+    final displayTitle = title.isNotEmpty ? title : 'anti_fraud'.tr;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -3260,7 +3260,7 @@ class _PolicyViewState extends State<PolicyView> {
         ? accountController.under18ContentHt.value
         : accountController.under18ContentEn.value;
 
-    final displayTitle = title.isNotEmpty ? title : 'Under-18 Protection';
+    final displayTitle = title.isNotEmpty ? title : 'under_18'.tr;
 
     return Scaffold(
       backgroundColor: Colors.white,

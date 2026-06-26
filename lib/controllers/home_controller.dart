@@ -396,7 +396,13 @@ class HomeController extends GetxController {
   void changeNavIndex(int index) {
     debugPrint('=== changeNavIndex called with index: $index ===');
     currentNavIndex.value = index;
-    if (index == 1) {
+    if (index == 0) {
+      try {
+        fetchHomeData();
+      } catch (e) {
+        debugPrint('Error reloading home data: $e');
+      }
+    } else if (index == 1) {
       try {
         if (Get.isRegistered<ResultsController>()) {
           Get.find<ResultsController>().fetchDrawResults();
@@ -422,8 +428,7 @@ class HomeController extends GetxController {
     } else if (index == 4) {
       try {
         final authController = Get.find<AuthController>();
-        authController.fetchProfile();
-        authController.fetchWallet();
+        authController.fetchProfileAndWallet();
       } catch (_) {}
     }
   }

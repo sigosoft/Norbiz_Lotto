@@ -179,5 +179,20 @@
   "Maximum bet amount is $@max.": "Le montant maximum de mise est de $@max.",
   "Please enter the 6-digit verification code.": "Veuillez entrer le code de vérification à 6 chiffres.",
   "Enter Amount ($USD)": "Entrer le montant ($USD)",
-  "payout_label_format": "Paiement: @label"
+  "payout_label_format": "Paiement: @label",
+  "your_cart": "Votre panier",
+  "current_wallet_balance": "Solde actuel du portefeuille",
+  "sufficient_balance": "Solde suffisant",
+  "insufficient": "Insuffisant",
+  "top_up_wallet": "Recharger le portefeuille",
+  "total_tickets": "Total des tickets",
+  "subtotal": "Sous-total",
+  "service_fee": "Frais de service",
+  "total_amount": "Montant total",
+  "potential_win": "Gain potentiel",
+  "bet_amount": "Montant du pari",
+  "confirm_bet": "Confirmer le pari",
+  "search_by_lottery_or_draw": "Rechercher par loterie ou tirage",
+  "no_match_found": "Aucun résultat trouvé",
+  "resend_code_btn": "Renvoyer le code"
 }

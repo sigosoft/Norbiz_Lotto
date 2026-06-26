@@ -88,8 +88,7 @@ class AccountController extends GetxController {
     loadMockData();
     try {
       final authController = Get.find<AuthController>();
-      authController.fetchProfile();
-      authController.fetchWallet();
+      authController.fetchProfileAndWallet();
       fetchGeneralSettings();
     } catch (e, stack) {
       debugPrint('Error on init AccountController: $e');

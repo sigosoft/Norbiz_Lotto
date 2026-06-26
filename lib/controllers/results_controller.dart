@@ -41,63 +41,7 @@ class ResultsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadResults();
     fetchDrawResults();
-  }
-
-  void loadResults() {
-    var data = [
-      DrawResultItem(
-        title: 'FL Midday',
-        gameType: 'Borlette',
-        drawNumbers: ['4', '7', '2', '8', '3', '1', '6'],
-        winningNumbers: ['47', '28', '31'],
-      ),
-      DrawResultItem(
-        title: 'FL Midday',
-        gameType: 'Lotto 3',
-        drawNumbers: ['4', '7', '2', '8', '3', '1', '6'],
-        winningNumbers: ['4', '7', '2'],
-      ),
-      DrawResultItem(
-        title: 'FL Midday',
-        gameType: 'Lotto 4',
-        drawNumbers: ['4', '7', '2', '8', '3', '1', '6'],
-        winningNumbers: ['4', '7', '2', '8'],
-      ),
-      DrawResultItem(
-        title: 'FL Midday',
-        gameType: 'Lotto 5',
-        drawNumbers: ['4', '7', '2', '8', '3', '1', '6'],
-        winningNumbers: ['472', '83', '16'],
-      ),
-      DrawResultItem(
-        title: 'FL Midday',
-        gameType: 'Borlette',
-        drawNumbers: ['1', '3', '4', '5', '0', '8', '9'],
-        winningNumbers: ['13', '45', '08'],
-      ),
-      DrawResultItem(
-        title: 'FL Midday',
-        gameType: 'Lotto 3',
-        drawNumbers: ['1', '3', '4', '5', '0', '8', '9'],
-        winningNumbers: ['1', '3', '4'],
-      ),
-      DrawResultItem(
-        title: 'FL Midday',
-        gameType: 'Lotto 4',
-        drawNumbers: ['1', '3', '4', '5', '0', '8', '9'],
-        winningNumbers: ['1', '3', '4', '5'],
-      ),
-      DrawResultItem(
-        title: 'FL Midday',
-        gameType: 'Lotto 5',
-        drawNumbers: ['1', '3', '4', '5', '0', '8', '9'],
-        winningNumbers: ['134', '50', '89'],
-      ),
-    ];
-    resultsList.value = data;
-    filteredResults.value = data;
   }
 
   void changeStateTab(String state) {

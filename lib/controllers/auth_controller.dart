@@ -13,6 +13,7 @@ import '../configs/api_config.dart';
 class AuthController extends GetxController {
   // Common states
   var isLoading = false.obs;
+  var isProfileLoading = false.obs;
 
   // Sign In controllers
   final signInPhoneController = TextEditingController();
@@ -543,7 +544,7 @@ class AuthController extends GetxController {
                 profile['gender_label_en']?.toString() ??
                 profile['gender']?.toString() ??
                 '';
-            userImageUrl.value = profile['image']?.toString() ?? '';
+            userImageUrl.value = _parseImageUrl(profile);
             userMobileRaw.value = profile['mobile']?.toString() ?? '';
 
             await prefs.setString('user_name', userName.value);
@@ -858,6 +859,20 @@ class AuthController extends GetxController {
     }
   }
 
+  Future<void> fetchProfileAndWallet() async {
+    isProfileLoading.value = true;
+    try {
+      await Future.wait([
+        fetchProfile(),
+        fetchWallet(),
+      ]);
+    } catch (e) {
+      debugPrint('Error fetching profile and wallet: $e');
+    } finally {
+      isProfileLoading.value = false;
+    }
+  }
+
   Future<void> fetchProfile() async {
     try {
       final connect = GetConnect();
@@ -920,7 +935,7 @@ class AuthController extends GetxController {
                 profile['gender_label_en']?.toString() ??
                 profile['gender']?.toString() ??
                 '';
-            userImageUrl.value = profile['image']?.toString() ?? '';
+            userImageUrl.value = _parseImageUrl(profile);
             userMobileRaw.value = profile['mobile']?.toString() ?? '';
 
             await prefs.setString('user_name', userName.value);
@@ -1194,5 +1209,48 @@ class AuthController extends GetxController {
       }
     }
     return messageObj.toString();
+  }
+
+  String _parseImageUrl(Map profile) {
+    final String image = profile['image']?.toString() ?? '';
+    final String imageUrl = profile['image_url']?.toString() ?? '';
+
+    if (image.isEmpty) return '';
+
+    if (image.startsWith('http')) {
+      if (image.contains('localhost')) {
+        return image
+            .replaceFirst(
+              'http://localhost',
+              'https://ourworks.co.in/Norbiz-Lotto/public',
+            )
+            .replaceFirst(
+              'https://localhost',
+              'https://ourworks.co.in/Norbiz-Lotto/public',
+            );
+      }
+      return image;
+    }
+
+    if (imageUrl.isNotEmpty && imageUrl.startsWith('http')) {
+      if (imageUrl.contains('localhost')) {
+        return imageUrl
+            .replaceFirst(
+              'http://localhost',
+              'https://ourworks.co.in/Norbiz-Lotto/public',
+            )
+            .replaceFirst(
+              'https://localhost',
+              'https://ourworks.co.in/Norbiz-Lotto/public',
+            );
+      }
+      return imageUrl;
+    }
+
+    final baseDomain = ApiConfig.baseUrl.replaceAll(
+      '/api/customer/',
+      '/storage/',
+    );
+    return '$baseDomain$image';
   }
 }

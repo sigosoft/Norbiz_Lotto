@@ -202,9 +202,9 @@ class BetSuccessView extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 2),
-                  const Text(
-                    "Bet Placed Successfully",
-                    style: TextStyle(
+                  Text(
+                    "bet_placed".tr,
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 22,
                       color: Color(0xFF1E293B),
@@ -212,9 +212,9 @@ class BetSuccessView extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    "Your luck is in the draw. Good luck!",
-                    style: TextStyle(
+                  Text(
+                    "bet_placed_desc".tr,
+                    style: const TextStyle(
                       color: Color(0xFF94A3B8),
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -239,9 +239,9 @@ class BetSuccessView extends StatelessWidget {
                       ),
                       child: Column(
                         children: [
-                          const Text(
-                            "Ticket ID",
-                            style: TextStyle(
+                          Text(
+                            "ticket_id".tr,
+                            style: const TextStyle(
                               color: Color(0xFF94A3B8),
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
@@ -349,9 +349,9 @@ class BetSuccessView extends StatelessWidget {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  "Potential Win",
-                                  style: TextStyle(
+                                Text(
+                                  "potential_win".tr,
+                                  style: const TextStyle(
                                     color: Color(0xFF94A3B8),
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
@@ -373,9 +373,9 @@ class BetSuccessView extends StatelessWidget {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                const Text(
-                                  "Draw Time",
-                                  style: TextStyle(
+                                Text(
+                                  "draw_time".tr,
+                                  style: const TextStyle(
                                     color: Color(0xFF94A3B8),
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
@@ -402,9 +402,9 @@ class BetSuccessView extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              "Total Amount",
-                              style: TextStyle(
+                            Text(
+                              "total_amount".tr,
+                              style: const TextStyle(
                                 color: Color(0xFF1E293B),
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
@@ -440,9 +440,9 @@ class BetSuccessView extends StatelessWidget {
                       minimumSize: const Size(double.infinity, 40),
                       elevation: 0,
                     ),
-                    child: const Text(
-                      "View My Bet",
-                      style: TextStyle(
+                    child: Text(
+                      "view_my_bet".tr,
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
@@ -466,9 +466,9 @@ class BetSuccessView extends StatelessWidget {
                             minimumSize: const Size(0, 40),
                             elevation: 0,
                           ),
-                          child: const Text(
-                            "Back to Home",
-                            style: TextStyle(
+                          child: Text(
+                            "back_home".tr,
+                            style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
@@ -490,9 +490,9 @@ class BetSuccessView extends StatelessWidget {
                             minimumSize: const Size(0, 40),
                             elevation: 0,
                           ),
-                          child: const Text(
-                            "Play Again",
-                            style: TextStyle(
+                          child: Text(
+                            "play_again".tr,
+                            style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),

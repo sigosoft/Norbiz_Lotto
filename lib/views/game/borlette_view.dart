@@ -289,9 +289,9 @@ class BorletteView extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Text(
-                          'WIN',
-                          style: TextStyle(
+                        Text(
+                          'WIN'.tr,
+                          style: const TextStyle(
                             color: Color(0xFF002C8B),
                             fontWeight: FontWeight.w900,
                             fontSize: 14,

@@ -131,7 +131,7 @@ class _CartViewState extends State<CartView> {
             ),
           ),
           Text(
-            'Your Cart',
+            'your_cart'.tr,
             style: const TextStyle(
               color: Color(0xFF002C8B),
               fontWeight: FontWeight.bold,
@@ -211,9 +211,9 @@ class _CartViewState extends State<CartView> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Current Wallet Balance",
-                    style: TextStyle(
+                  Text(
+                    "current_wallet_balance".tr,
+                    style: const TextStyle(
                       color: Color(0xFF94A3B8),
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -257,8 +257,8 @@ class _CartViewState extends State<CartView> {
                             const SizedBox(width: 4),
                             Text(
                               isSufficient
-                                  ? "Sufficient Balance"
-                                  : "Insufficient",
+                                  ? "sufficient_balance".tr
+                                  : "insufficient".tr,
                               style: TextStyle(
                                 color: isSufficient
                                     ? const Color(0xFF16A34A)
@@ -276,17 +276,17 @@ class _CartViewState extends State<CartView> {
               ),
               GestureDetector(
                 onTap: () {},
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.add_circle_outline_rounded,
                       color: Color(0xFFFE9900),
                       size: 16,
                     ),
-                    SizedBox(width: 4),
+                    const SizedBox(width: 4),
                     Text(
-                      "Top Up Wallet",
-                      style: TextStyle(
+                      "top_up_wallet".tr,
+                      style: const TextStyle(
                         color: Color(0xFFFE9900),
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
@@ -317,22 +317,22 @@ class _CartViewState extends State<CartView> {
       child: Column(
         children: [
           _buildSummaryRow(
-            "Total Tickets",
+            "total_tickets".tr,
             "${cartController.cartTickets.length}",
           ),
           const SizedBox(height: 12),
           _buildSummaryRow(
-            "Subtotal",
+            "subtotal".tr,
             "\$${cartController.subtotal.toStringAsFixed(2)}",
           ),
           const SizedBox(height: 12),
           _buildSummaryRow(
-            "Service Fee",
+            "service_fee".tr,
             "\$${cartController.serviceFee.toStringAsFixed(2)}",
           ),
           const Divider(color: Color(0xFFF1F5F9), thickness: 1, height: 28),
           _buildSummaryRow(
-            "Total Amount",
+            "total_amount".tr,
             "\$${cartController.total.toStringAsFixed(2)}",
             isBold: true,
           ),
@@ -434,9 +434,9 @@ class _CartViewState extends State<CartView> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  "Potential Win",
-                                  style: TextStyle(
+                                Text(
+                                  "potential_win".tr,
+                                  style: const TextStyle(
                                     color: Color(0xFF94A3B8),
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
@@ -456,9 +456,9 @@ class _CartViewState extends State<CartView> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                const Text(
-                                  "Draw Time",
-                                  style: TextStyle(
+                                Text(
+                                  "draw_time".tr,
+                                  style: const TextStyle(
                                     color: Color(0xFF94A3B8),
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
@@ -492,9 +492,9 @@ class _CartViewState extends State<CartView> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                const Text(
-                                  "Bet Amount",
-                                  style: TextStyle(
+                                Text(
+                                  "bet_amount".tr,
+                                  style: const TextStyle(
                                     color: Color(0xFF94A3B8),
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
@@ -551,9 +551,9 @@ class _CartViewState extends State<CartView> {
                 minimumSize: const Size(double.infinity, 48),
                 elevation: 0,
               ),
-              child: const Text(
-                'Confirm Bet',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              child: Text(
+                'confirm_bet'.tr,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
             ),
             const SizedBox(height: 16),

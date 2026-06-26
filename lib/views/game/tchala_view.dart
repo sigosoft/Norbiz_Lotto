@@ -65,9 +65,9 @@ class TchalaView extends StatelessWidget {
                           ),
                         ),
                         // Title
-                        const Text(
-                          'Tchala',
-                          style: TextStyle(
+                        Text(
+                          'tchala'.tr,
+                          style: const TextStyle(
                             color: Color(0xFF1E293B),
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
@@ -103,22 +103,21 @@ class TchalaView extends StatelessWidget {
                           color: Color(0xFF1E293B),
                           fontWeight: FontWeight.w500,
                         ),
-                        decoration: const InputDecoration(
-                          hintText:
-                              'Search dream, symbol, or event (e.g. snake, money, death)',
-                          hintStyle: TextStyle(
+                        decoration: InputDecoration(
+                          hintText: 'dream_search'.tr,
+                          hintStyle: const TextStyle(
                             color: Color(0xFF94A3B8),
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
                           ),
-                          prefixIcon: Icon(
+                          prefixIcon: const Icon(
                             Icons.search,
                             color: Color(0xFF94A3B8),
                             size: 22,
                           ),
                           filled: false,
                           isDense: true,
-                          contentPadding: EdgeInsets.symmetric(vertical: 16),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 16),
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,
                           focusedBorder: InputBorder.none,
@@ -146,9 +145,9 @@ class TchalaView extends StatelessWidget {
                                 color: Colors.grey.shade400,
                               ),
                               const SizedBox(height: 12),
-                              const Text(
-                                'No match found',
-                                style: TextStyle(
+                              Text(
+                                'no_match_found'.tr,
+                                style: const TextStyle(
                                   fontWeight: FontWeight.w500,
                                   color: Colors.grey,
                                 ),
