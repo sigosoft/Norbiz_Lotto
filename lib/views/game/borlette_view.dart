@@ -1148,7 +1148,7 @@ class BorletteView extends StatelessWidget {
                 borderRadius: BorderRadius.circular(28),
               ),
               child: const Icon(
-                Icons.close,
+                Icons.check,
                 color: AppTheme.primaryOrange,
                 size: 22,
               ),

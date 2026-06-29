@@ -6,6 +6,7 @@ import '../models/game_model.dart';
 import '../models/dream_model.dart';
 import '../configs/api_config.dart';
 import '../configs/toast.dart';
+import 'cart_controller.dart';
 
 class GameController extends GetxController {
   // Active game selected
@@ -277,58 +278,153 @@ class GameController extends GetxController {
         gameTypeId = 5;
     }
 
-    try {
-      final connect = GetConnect();
-      connect.timeout = const Duration(seconds: 15);
+    int drawId = 1;
+    if (activeGame.rawBoardData != null) {
+      final raw = activeGame.rawBoardData!;
+      final rawDrawId =
+          raw['draw_id'] ??
+          raw['draw_session_id'] ??
+          raw['draw_session']?['id'] ??
+          raw['id'];
+      if (rawDrawId != null) {
+        drawId = int.tryParse(rawDrawId.toString()) ?? 1;
+      }
+    }
 
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-      final Map<String, String> headers = {};
-      if (token != null && token.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $token';
+    final String currentSelection = selectedNumbers.value.trim();
+    final bool hasEnteredNumber = currentSelection.isNotEmpty;
+
+    debugPrint('=== performQuickPick ===');
+    debugPrint('Current Selection: "$currentSelection"');
+    debugPrint('Has Entered Number: $hasEnteredNumber');
+
+    if (hasEnteredNumber) {
+      // Scenario A: User entered a number manually.
+      // Call ONLY the tickets/validate API (don't call quick-pick API).
+      String numberPrimary = currentSelection;
+      String numberSecondary = '';
+      final isMaryaj =
+          activeGame.name.toLowerCase().contains('maryaj') ||
+          activeGame.name.toLowerCase().contains('marriage') ||
+          activeGame.id.toLowerCase().contains('maryaj') ||
+          activeGame.id.toLowerCase().contains('marriage');
+      if (isMaryaj && currentSelection.length >= 4) {
+        numberPrimary = currentSelection.substring(0, 2);
+        numberSecondary = currentSelection.substring(2, 4);
       }
 
-      final String url =
-          '${ApiConfig.baseUrl}${ApiConfig.quickPick}?game_type_id=$gameTypeId';
-      debugPrint('=== QUICK PICK API CALL ===');
-      debugPrint('URL: $url');
-      debugPrint('Headers: $headers');
+      double amount = double.tryParse(enteredAmount.value) ?? activeGame.minBet;
+      if (amount <= 0.0) {
+        amount = activeGame.minBet > 0 ? activeGame.minBet : 1.0;
+      }
 
-      final response = await connect.get(url, headers: headers);
+      try {
+        final cartController = Get.find<CartController>();
+        final bool isValidated = await cartController.validateTicket(
+          drawId: drawId,
+          gameTypeId: gameTypeId,
+          numberPrimary: numberPrimary,
+          numberSecondary: numberSecondary,
+          betAmount: amount,
+        );
 
-      debugPrint('=== QUICK PICK RESPONSE ===');
-      debugPrint('Status Code: ${response.statusCode}');
-      debugPrint('Response Body: ${response.body}');
+        if (isValidated) {
+          activeTarget.value = 'none';
+          isQuickPicked.value = true;
+        }
+      } catch (e) {
+        debugPrint('Error validating entered number: $e');
+        showToast('Validation failed. Please try again.', title: 'Error');
+      }
+    } else {
+      // Scenario B: User did NOT enter a number.
+      // Call BOTH quick-pick and validate APIs.
+      try {
+        final connect = GetConnect();
+        connect.timeout = const Duration(seconds: 15);
 
-      if (response.statusCode == 200 && response.body != null) {
-        final dataMap = response.body;
-        if (dataMap['status'] == 'true' || dataMap['status'] == true) {
-          final data = dataMap['data'];
-          if (data != null && data['numbers'] != null) {
-            final numbers = data['numbers'];
-            final primary = numbers['number_primary']?.toString() ?? '';
-            final secondary = numbers['number_secondary']?.toString() ?? '';
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('auth_token');
+        final Map<String, String> headers = {};
+        if (token != null && token.isNotEmpty) {
+          headers['Authorization'] = 'Bearer $token';
+        }
 
-            if (secondary.isNotEmpty) {
-              selectedNumbers.value = primary + secondary;
-            } else {
-              selectedNumbers.value = primary;
+        final String url =
+            '${ApiConfig.baseUrl}${ApiConfig.quickPick}?game_type_id=$gameTypeId';
+        debugPrint('=== QUICK PICK API CALL ===');
+        debugPrint('URL: $url');
+        debugPrint('Headers: $headers');
+
+        final response = await connect.get(url, headers: headers);
+
+        debugPrint('=== QUICK PICK RESPONSE ===');
+        debugPrint('Status Code: ${response.statusCode}');
+        debugPrint('Response Body: ${response.body}');
+
+        if (response.statusCode == 200 && response.body != null) {
+          final dataMap = response.body;
+          if (dataMap['status'] == 'true' || dataMap['status'] == true) {
+            final data = dataMap['data'];
+            if (data != null && data['numbers'] != null) {
+              final numbers = data['numbers'];
+              final primary = numbers['number_primary']?.toString() ?? '';
+              final secondary = numbers['number_secondary']?.toString() ?? '';
+
+              String generatedNumbers = '';
+              if (secondary.isNotEmpty) {
+                generatedNumbers = primary + secondary;
+              } else {
+                generatedNumbers = primary;
+              }
+
+              // Call validate API on the generated number
+              String tempPrimary = primary;
+              String tempSecondary = secondary;
+              final isMaryaj =
+                  activeGame.name.toLowerCase().contains('maryaj') ||
+                  activeGame.name.toLowerCase().contains('marriage') ||
+                  activeGame.id.toLowerCase().contains('maryaj') ||
+                  activeGame.id.toLowerCase().contains('marriage');
+              if (isMaryaj && generatedNumbers.length >= 4) {
+                tempPrimary = generatedNumbers.substring(0, 2);
+                tempSecondary = generatedNumbers.substring(2, 4);
+              }
+
+              double amount =
+                  double.tryParse(enteredAmount.value) ?? activeGame.minBet;
+              if (amount <= 0.0) {
+                amount = activeGame.minBet > 0 ? activeGame.minBet : 1.0;
+              }
+
+              final cartController = Get.find<CartController>();
+              final bool isValidated = await cartController.validateTicket(
+                drawId: drawId,
+                gameTypeId: gameTypeId,
+                numberPrimary: tempPrimary,
+                numberSecondary: tempSecondary,
+                betAmount: amount,
+              );
+
+              if (isValidated) {
+                selectedNumbers.value = generatedNumbers;
+                activeTarget.value = 'none';
+                isQuickPicked.value = true;
+              }
             }
-            activeTarget.value = 'none';
-            isQuickPicked.value = true;
+          } else {
+            final dynamic errMsg = dataMap['message'] != null
+                ? dataMap['message']
+                : 'Failed to generate quick pick numbers.';
+            showToast(errMsg, title: 'Error');
           }
         } else {
-          final dynamic errMsg = dataMap['message'] != null
-              ? dataMap['message']
-              : 'Failed to generate quick pick numbers.';
-          showToast(errMsg, title: 'Error');
+          showToast('Server error. Please try again.', title: 'Error');
         }
-      } else {
-        showToast('Server error. Please try again.', title: 'Error');
+      } catch (e) {
+        debugPrint('Error performing quick pick / validation: $e');
+        showToast('An error occurred. Please try again.', title: 'Error');
       }
-    } catch (e) {
-      debugPrint('Error performing quick pick: $e');
-      showToast('An error occurred. Please try again.', title: 'Error');
     }
   }
 
